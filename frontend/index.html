@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uncle Joe — Scan & Pesan</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body {
+      background: var(--coffee-900);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .landing-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6) var(--space-5);
+    }
+
+    /* Logo & Hero */
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-xl);
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-5);
+      color: var(--coffee-200);
+    }
+
+    .hero-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      text-align: center;
+      margin-bottom: var(--space-2);
+      letter-spacing: -0.5px;
+    }
+
+    .hero-title span { color: var(--coffee-300); }
+
+    .hero-subtitle {
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.9rem;
+      margin-bottom: var(--space-8);
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    /* Card Input Meja */
+    .scan-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .scan-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .scan-card-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-5);
+      padding-left: 28px;
+    }
+
+    .meja-input-wrap {
+      display: flex;
+      gap: var(--space-3);
+      align-items: stretch;
+    }
+
+    .meja-input-wrap .form-control {
+      flex: 1;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      border-width: 2px;
+    }
+
+    .meja-input-wrap .form-control:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-scan {
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      font-size: 0.9rem;
+    }
+
+    /* Footer */
+    .landing-footer {
+      text-align: center;
+      padding: var(--space-5);
+      color: rgba(255,255,255,0.3);
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-wrapper">
+    <!-- Logo Hero -->
+    <div class="hero-logo">
+      <i data-lucide="coffee" style="width:40px;height:40px;"></i>
+    </div>
+
+    <h1 class="hero-title">Uncle <span>Joe</span></h1>
+    <p class="hero-subtitle">Pesan favoritmu langsung dari meja, tanpa antre di kasir.</p>
+
+    <!-- Card Scan QR -->
+    <div class="scan-card">
+      <div class="scan-card-title">
+        <i data-lucide="armchair" style="width:20px;height:20px;color:var(--coffee-500);"></i>
+        Nomor Meja
+      </div>
+      <p class="scan-card-subtitle">Masukkan nomor meja Anda untuk mulai memesan</p>
+
+      <div class="meja-input-wrap">
+        <input
+          type="number"
+          id="inputMeja"
+          class="form-control"
+          placeholder="1"
+          min="1"
+          max="99"
+          value="1"
+        >
+        <button id="btnScan" class="btn btn-primary btn-scan">
+          <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+          Lihat Menu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-footer">
+    QR Ordering System &copy; 2025 &mdash; Penulisan Ilmiah
+  </div>
+
+  <script>
+    // Inisialisasi ikon Lucide
+    lucide.createIcons();
+
+    // Logic simulasi scan QR meja
+    document.getElementById('btnScan').addEventListener('click', () => {
+      const noMeja = document.getElementById('inputMeja').value;
+      if (!noMeja || parseInt(noMeja) <= 0) {
+        alert('Silakan masukkan nomor meja yang valid.');
+        return;
+      }
+      window.location.href = `menu.html?meja=${noMeja}`;
+    });
+
+    // Tekan Enter untuk langsung buka menu
+    document.getElementById('inputMeja').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btnScan').click();
+    });
+  </script>
+</body>
+</html>

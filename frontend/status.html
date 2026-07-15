@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Pesanan — Uncle Joe</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { background: var(--surface-cream); }
+    .page-content { padding: var(--space-5); padding-bottom: 40px; }
+  </style>
+</head>
+<body class="page-wrapper">
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="menu.html" class="navbar-brand">
+        <i data-lucide="coffee" style="width:18px;height:18px;color:var(--coffee-500);"></i>
+        Uncle <span>Joe</span>
+      </a>
+      <a href="menu.html" class="btn btn-secondary btn-sm" style="width:auto;">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i> Pesan Lagi
+      </a>
+    </div>
+  </header>
+
+  <main class="page-content container">
+
+    <!-- Header Pesanan -->
+    <div style="text-align:center;padding:var(--space-5) 0 var(--space-4) 0;">
+      <div style="font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:var(--space-2);">Nomor Pesanan</div>
+      <div id="orderIdText" style="font-size:2rem;font-weight:800;color:var(--coffee-800);">#—</div>
+      <div id="waktuText" style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;"></div>
+    </div>
+
+    <!-- Alert Status -->
+    <div id="statusAlertBox" style="padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border);text-align:center;font-weight:500;font-size:0.9rem;margin-bottom:var(--space-5);">
+      Menghubungkan ke server...
+    </div>
+
+    <!-- Status Tracker (Vertikal) -->
+    <div class="card mb-4">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="activity" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Progres Pesanan
+      </div>
+      <div class="card-body">
+        <div class="status-steps">
+          <div class="status-step" id="step-Menunggu">
+            <div class="status-dot"><i data-lucide="clock" style="width:18px;height:18px;"></i></div>
+            <div class="status-step-info">
+              <div class="status-step-label">Menunggu</div>
+              <div class="status-step-desc">Pesanan diterima, menunggu diproses</div>
+            </div>
+          </div>
+          <div class="status-step" id="step-Diproses">
+            <div class="status-dot"><i data-lucide="coffee" style="width:18px;height:18px;"></i></div>
+            <div class="status-step-info">
+              <div class="status-step-label">Diproses</div>
+              <div class="status-step-desc">Pesanan sedang diracik oleh barista</div>
+            </div>
+          </div>
+          <div class="status-step" id="step-Siap">
+            <div class="status-dot"><i data-lucide="bell" style="width:18px;height:18px;"></i></div>
+            <div class="status-step-info">
+              <div class="status-step-label">Siap</div>
+              <div class="status-step-desc">Pesanan siap, silakan ambil di kasir</div>
+            </div>
+          </div>
+          <div class="status-step" id="step-Selesai">
+            <div class="status-dot"><i data-lucide="circle-check" style="width:18px;height:18px;"></i></div>
+            <div class="status-step-info">
+              <div class="status-step-label">Selesai</div>
+              <div class="status-step-desc">Transaksi selesai, terima kasih!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Pesanan -->
+    <div class="card">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="display:flex;align-items:center;gap:8px;">
+          <i data-lucide="receipt" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+          Detail Pesanan
+        </span>
+        <span id="mejaBadge" style="font-size:0.8rem;background:var(--surface-beige);padding:3px 10px;border-radius:50px;color:var(--text-secondary);border:1px solid var(--border);">Meja —</span>
+      </div>
+      <div class="card-body">
+        <div id="orderItemsList" style="margin-bottom:var(--space-4);">
+          <!-- Diisi via JS -->
+        </div>
+        <div class="summary-box" style="margin-bottom:0;">
+          <div class="summary-row summary-total" style="margin-bottom:0;">
+            <span>Total Dibayar</span>
+            <span id="totalHargaText">Rp 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:var(--space-5);">
+      <i data-lucide="refresh-cw" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
+      Halaman ini otomatis diperbarui setiap 10 detik.
+    </p>
+
+  </main>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId   = urlParams.get('id');
+    if (!orderId) { window.location.href = 'menu.html'; }
+
+    document.getElementById('orderIdText').textContent = `#${orderId}`;
+    lucide.createIcons();
+
+    async function dapatkanStatus() {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/status`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        perbaruiUI(data);
+      } catch {
+        document.getElementById('statusAlertBox').innerHTML =
+          `<span style="color:var(--status-waiting-text)">Koneksi terputus. Mencoba lagi...</span>`;
+      }
+    }
+
+    function perbaruiUI(data) {
+      const order = data.order;
+      const items = data.items;
+
+      // Waktu & Meja
+      const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('waktuText').textContent = `Dipesan pukul ${waktu} WIB`;
+      document.getElementById('mejaBadge').textContent = `Meja ${order.nomor_meja}`;
+
+      // Detail Items
+      let total = 0;
+      document.getElementById('orderItemsList').innerHTML = items.map(item => {
+        total += item.subtotal;
+        return `<div class="order-item-row">
+          <span>${item.nama || 'Menu'} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
+          <span style="font-weight:600;">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('totalHargaText').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+
+      // Tracker Status
+      const urutanStatus = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
+      const idxAktif = urutanStatus.indexOf(order.status);
+
+      urutanStatus.forEach((s, idx) => {
+        const el = document.getElementById(`step-${s}`);
+        el.classList.remove('active', 'done');
+        if (idx < idxAktif)  el.classList.add('done');
+        if (idx === idxAktif) el.classList.add('active');
+      });
+
+      // Alert Box
+      const alert = document.getElementById('statusAlertBox');
+      const configs = {
+        'Menunggu':  { bg: 'var(--status-waiting-bg)',  color: 'var(--status-waiting-text)',  border: 'var(--status-waiting-border)',  icon: 'clock',         msg: 'Pesanan Anda diterima. Sedang menunggu konfirmasi.' },
+        'Diproses':  { bg: 'var(--status-process-bg)',  color: 'var(--status-process-text)',  border: 'var(--status-process-border)',  icon: 'coffee',        msg: 'Pesanan Anda sedang diracik oleh barista.' },
+        'Siap':      { bg: 'var(--status-ready-bg)',    color: 'var(--status-ready-text)',    border: 'var(--status-ready-border)',    icon: 'bell',          msg: 'Pesanan SIAP! Silakan ambil di kasir.' },
+        'Selesai':   { bg: 'var(--status-done-bg)',     color: 'var(--status-done-text)',     border: 'var(--status-done-border)',     icon: 'circle-check',  msg: 'Selesai! Terima kasih sudah berkunjung.' },
+      };
+      const cfg = configs[order.status] || configs['Menunggu'];
+      alert.style.background    = cfg.bg;
+      alert.style.color         = cfg.color;
+      alert.style.borderColor   = cfg.border;
+      alert.innerHTML = `<i data-lucide="${cfg.icon}" style="width:18px;height:18px;vertical-align:middle;margin-right:8px;"></i>${cfg.msg}`;
+      lucide.createIcons();
+    }
+
+    dapatkanStatus();
+    const interval = setInterval(dapatkanStatus, 10000);
+    window.addEventListener('beforeunload', () => clearInterval(interval));
+  </script>
+</body>
+</html>

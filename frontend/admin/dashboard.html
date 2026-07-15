@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Admin Uncle Joe</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    .welcome-bar {
+      background: linear-gradient(135deg, var(--coffee-800) 0%, var(--coffee-600) 100%);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-md);
+    }
+    .welcome-text { color: white; }
+    .welcome-text h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 2px; }
+    .welcome-text p  { font-size: 0.82rem; opacity: 0.7; }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-3);
+      margin-top: var(--space-6);
+    }
+
+    .recent-order-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--border);
+    }
+    .recent-order-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body class="admin-layout">
+
+  <!-- Sidebar (Desktop) -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="coffee" style="width:22px;height:22px;color:var(--coffee-200);"></i>
+        </div>
+        <div>
+          <div class="sidebar-logo-text">Uncle Joe</div>
+          <div class="sidebar-logo-sub">Admin Panel</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav-item">
+        <a href="dashboard.html" class="sidebar-nav-link active">
+          <i data-lucide="layout-dashboard" style="width:17px;height:17px;"></i>
+          Dashboard
+        </a>
+      </div>
+      <div class="sidebar-nav-item">
+        <a href="orders.html" class="sidebar-nav-link">
+          <i data-lucide="clipboard-list" style="width:17px;height:17px;"></i>
+          Pesanan
+        </a>
+      </div>
+      <div class="sidebar-nav-item">
+        <a href="menu.html" class="sidebar-nav-link">
+          <i data-lucide="utensils" style="width:17px;height:17px;"></i>
+          Menu
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="logout()" class="sidebar-nav-link" style="width:100%;border:none;cursor:pointer;background:none;">
+        <i data-lucide="log-out" style="width:17px;height:17px;"></i>
+        Keluar
+      </button>
+    </div>
+  </aside>
+
+  <!-- Konten Utama -->
+  <div class="admin-content">
+
+    <!-- Topbar -->
+    <div class="admin-topbar">
+      <div>
+        <div class="admin-topbar-title">Dashboard</div>
+        <div class="admin-topbar-sub" id="greetingText">Selamat datang, Admin</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--space-3);">
+        <span style="font-size:0.82rem;color:var(--text-muted);" id="dateText"></span>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--coffee-700);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;" id="adminAvatar">A</div>
+      </div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="admin-page admin-page-with-bottom">
+
+      <!-- Welcome Bar -->
+      <div class="welcome-bar">
+        <div class="welcome-text">
+          <h2>Selamat Datang di Dapur Digital 👨‍🍳</h2>
+          <p>Monitor dan kelola pesanan masuk secara real-time di sini.</p>
+        </div>
+        <a href="orders.html" class="btn btn-secondary btn-sm" style="flex-shrink:0;">
+          <i data-lucide="eye" style="width:14px;height:14px;"></i>
+          Lihat Pesanan
+        </a>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="section-label">Statistik Hari Ini</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-green">
+            <i data-lucide="utensils" style="width:22px;height:22px;"></i>
+          </div>
+          <div>
+            <div class="stat-label">Total Menu</div>
+            <div class="stat-value" id="statMenu">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-blue">
+            <i data-lucide="shopping-bag" style="width:22px;height:22px;"></i>
+          </div>
+          <div>
+            <div class="stat-label">Pesanan Hari Ini</div>
+            <div class="stat-value" id="statHariIni">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-amber">
+            <i data-lucide="clock" style="width:22px;height:22px;"></i>
+          </div>
+          <div>
+            <div class="stat-label">Menunggu</div>
+            <div class="stat-value" id="statMenunggu">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-red">
+            <i data-lucide="flame" style="width:22px;height:22px;"></i>
+          </div>
+          <div>
+            <div class="stat-label">Diproses</div>
+            <div class="stat-value" id="statDiproses">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pesanan Terbaru -->
+      <div class="section-label">Pesanan Terbaru</div>
+      <div class="card">
+        <div id="recentOrdersContainer">
+          <div style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
+            <i data-lucide="loader-circle" style="width:24px;height:24px;margin:0 auto var(--space-3) auto;display:block;"></i>
+            Memuat data...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Nav (Mobile) -->
+    <nav class="admin-mobile-nav">
+      <a href="dashboard.html" class="admin-mobile-nav-item active">
+        <i data-lucide="layout-dashboard" style="width:20px;height:20px;"></i> Dashboard
+      </a>
+      <a href="orders.html" class="admin-mobile-nav-item">
+        <i data-lucide="clipboard-list" style="width:20px;height:20px;"></i> Pesanan
+      </a>
+      <a href="menu.html" class="admin-mobile-nav-item">
+        <i data-lucide="utensils" style="width:20px;height:20px;"></i> Menu
+      </a>
+      <button onclick="logout()" class="admin-mobile-nav-item">
+        <i data-lucide="log-out" style="width:20px;height:20px;"></i> Keluar
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const token = localStorage.getItem('admin_token');
+    if (!token) window.location.href = 'login.html';
+
+    const username = localStorage.getItem('admin_username') || 'Admin';
+    document.getElementById('greetingText').textContent = `Selamat datang, ${username}`;
+    document.getElementById('adminAvatar').textContent = username.charAt(0).toUpperCase();
+    document.getElementById('dateText').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/orders/dashboard-summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) { logout(); return; }
+        const data = await res.json();
+        document.getElementById('statMenu').textContent     = data.jumlah_menu ?? '—';
+        document.getElementById('statHariIni').textContent  = data.pesanan_hari_ini ?? '—';
+        document.getElementById('statMenunggu').textContent = data.pesanan_menunggu ?? '—';
+        document.getElementById('statDiproses').textContent = data.pesanan_diproses ?? '—';
+      } catch {}
+
+      try {
+        const res = await fetch('/api/orders', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const allOrders = await res.json();
+        const orders = allOrders.slice(0, 5);
+        const container = document.getElementById('recentOrdersContainer');
+
+        if (!orders.length) {
+          container.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--text-muted);"><i data-lucide="inbox" style="width:32px;height:32px;margin:0 auto var(--space-3) auto;display:block;"></i>Belum ada pesanan.</div>`;
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = orders.map(o => `
+          <div class="recent-order-row">
+            <div>
+              <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Meja ${o.nomor_meja}</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);">
+                ${new Date(o.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                &bull; Meja ${o.nomor_meja}
+              </div>
+            </div>
+            <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch {}
+    }
+
+    function logout() {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      window.location.href = 'login.html';
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

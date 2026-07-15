@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola Menu — Admin Uncle Joe</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    .menu-thumb {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      background: var(--surface-beige);
+      flex-shrink: 0;
+    }
+    /* Modal Overlay versi admin (tengah layar) */
+    .admin-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20,10,5,0.5);
+      backdrop-filter: blur(2px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-5);
+    }
+    .admin-modal-overlay.show { display: flex; }
+    .admin-modal-box {
+      background: white;
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 460px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: slideUp 0.2s ease;
+    }
+    .admin-modal-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .admin-modal-header h3 { font-size: 1rem; font-weight: 700; }
+    .admin-modal-body { padding: var(--space-6); }
+    .admin-modal-footer {
+      padding: var(--space-4) var(--space-6);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-3);
+    }
+    .img-preview {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      background: var(--surface-beige);
+      border: 1px solid var(--border);
+      margin-top: var(--space-3);
+    }
+  </style>
+</head>
+<body class="admin-layout">
+
+  <!-- Sidebar (Desktop) -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i data-lucide="coffee" style="width:22px;height:22px;color:var(--coffee-200);"></i>
+        </div>
+        <div>
+          <div class="sidebar-logo-text">Uncle Joe</div>
+          <div class="sidebar-logo-sub">Admin Panel</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav-item">
+        <a href="dashboard.html" class="sidebar-nav-link">
+          <i data-lucide="layout-dashboard" style="width:17px;height:17px;"></i>
+          Dashboard
+        </a>
+      </div>
+      <div class="sidebar-nav-item">
+        <a href="orders.html" class="sidebar-nav-link">
+          <i data-lucide="clipboard-list" style="width:17px;height:17px;"></i>
+          Pesanan
+        </a>
+      </div>
+      <div class="sidebar-nav-item">
+        <a href="menu.html" class="sidebar-nav-link active">
+          <i data-lucide="utensils" style="width:17px;height:17px;"></i>
+          Menu
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="logout()" class="sidebar-nav-link" style="width:100%;border:none;cursor:pointer;background:none;">
+        <i data-lucide="log-out" style="width:17px;height:17px;"></i>
+        Keluar
+      </button>
+    </div>
+  </aside>
+
+  <!-- Konten Utama -->
+  <div class="admin-content">
+    <!-- Topbar -->
+    <div class="admin-topbar">
+      <div>
+        <div class="admin-topbar-title">Kelola Menu</div>
+        <div class="admin-topbar-sub">Tambah, edit, atau hapus item menu cafe</div>
+      </div>
+      <button onclick="openMenuModal('add')" class="btn btn-primary btn-sm">
+        <i data-lucide="plus" style="width:15px;height:15px;"></i>
+        Tambah Menu
+      </button>
+    </div>
+
+    <!-- Page Content -->
+    <div class="admin-page admin-page-with-bottom">
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Gambar</th>
+                <th>Nama Menu</th>
+                <th>Kategori</th>
+                <th>Harga</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="menuTableBody">
+              <tr>
+                <td colspan="6" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
+                  <i data-lucide="loader-circle" style="width:24px;height:24px;margin:0 auto var(--space-3) auto;display:block;"></i>
+                  Memuat daftar menu...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav (Mobile) -->
+    <nav class="admin-mobile-nav">
+      <a href="dashboard.html" class="admin-mobile-nav-item">
+        <i data-lucide="layout-dashboard" style="width:20px;height:20px;"></i> Dashboard
+      </a>
+      <a href="orders.html" class="admin-mobile-nav-item">
+        <i data-lucide="clipboard-list" style="width:20px;height:20px;"></i> Pesanan
+      </a>
+      <a href="menu.html" class="admin-mobile-nav-item active">
+        <i data-lucide="utensils" style="width:20px;height:20px;"></i> Menu
+      </a>
+      <button onclick="logout()" class="admin-mobile-nav-item">
+        <i data-lucide="log-out" style="width:20px;height:20px;"></i> Keluar
+      </button>
+    </nav>
+  </div>
+
+  <!-- Modal Tambah/Edit Menu -->
+  <div class="admin-modal-overlay" id="menuModal">
+    <div class="admin-modal-box">
+      <div class="admin-modal-header">
+        <h3 id="modalTitle">Tambah Menu Baru</h3>
+        <button onclick="closeMenuModal()" class="btn btn-ghost btn-sm" style="width:auto;padding:4px;">
+          <i data-lucide="x" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="menuForm">
+          <input type="hidden" id="menuIdField">
+
+          <div class="form-group">
+            <label class="form-label" for="namaMenu">Nama Menu</label>
+            <input type="text" id="namaMenu" class="form-control" placeholder="Contoh: Espresso Romano" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="hargaMenu">Harga (Rp)</label>
+            <input type="number" id="hargaMenu" class="form-control" placeholder="Contoh: 18000" required min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="kategoriMenu">Kategori</label>
+            <select id="kategoriMenu" class="form-control" required>
+              <option value="Minuman">Minuman</option>
+              <option value="Makanan">Makanan</option>
+              <option value="Snack">Snack</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gambarMenu">Foto Menu</label>
+            <input type="file" id="gambarMenu" class="form-control" accept="image/*" onchange="handleFileSelect(this)">
+            <div class="form-hint">Pilih file gambar (.jpg, .jpeg, .png) dari komputer Anda.</div>
+            <img id="imgPreview" class="img-preview" src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500" alt="Preview">
+          </div>
+        </form>
+      </div>
+      <div class="admin-modal-footer">
+        <button type="button" onclick="closeMenuModal()" class="btn btn-secondary btn-sm" style="width:auto;">Batal</button>
+        <button type="button" id="btnSimpanMenu" onclick="submitMenu()" class="btn btn-primary btn-sm" style="width:auto;">
+          <i data-lucide="save" style="width:14px;height:14px;"></i>
+          Simpan Menu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const token = localStorage.getItem('admin_token');
+    if (!token) { alert('Akses ditolak.'); window.location.href = 'login.html'; }
+
+    let allMenus = [];
+    let modalMode = 'add';
+    let base64Gambar = '';
+
+    // Mengubah file yang dipilih menjadi string Base64 Data URL
+    function handleFileSelect(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      // Batasi ukuran file (maks 1 MB untuk keamanan performa database)
+      if (file.size > 1024 * 1024) {
+        alert('Ukuran foto terlalu besar. Maksimal ukuran file adalah 1 MB.');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        base64Gambar = e.target.result;
+        document.getElementById('imgPreview').src = base64Gambar;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function loadMenus() {
+      try {
+        const res = await fetch('/api/menu');
+        if (!res.ok) throw new Error();
+        allMenus = await res.json();
+        renderMenuTable();
+      } catch {
+        alert('Gagal mengambil daftar menu.');
+      }
+    }
+
+    function renderMenuTable() {
+      const tbody = document.getElementById('menuTableBody');
+      if (!allMenus.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
+          <i data-lucide="package-open" style="width:32px;height:32px;margin:0 auto var(--space-3) auto;display:block;"></i>
+          Belum ada menu terdaftar. Tambahkan menu baru.
+        </td></tr>`;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = allMenus.map(menu => {
+        const img = menu.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200';
+        return `
+          <tr>
+            <td style="color:var(--text-muted);font-size:0.82rem;">#${menu.id}</td>
+            <td>
+              <img class="menu-thumb" src="${img}" alt="${menu.nama}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200'">
+            </td>
+            <td style="font-weight:600;color:var(--text-primary);">${menu.nama}</td>
+            <td><span class="badge" style="background:var(--surface-beige);color:var(--coffee-600);border-color:var(--border);">${menu.kategori}</span></td>
+            <td style="font-weight:600;">Rp ${menu.harga.toLocaleString('id-ID')}</td>
+            <td>
+              <div style="display:flex;gap:var(--space-2);">
+                <button onclick="editMenuPrep(${menu.id})" class="btn btn-secondary btn-sm" style="width:auto;">
+                  <i data-lucide="pencil" style="width:13px;height:13px;"></i> Edit
+                </button>
+                <button onclick="hapusMenu(${menu.id}, '${menu.nama.replace(/'/g, "\\'")}')" class="btn btn-danger btn-sm" style="width:auto;">
+                  <i data-lucide="trash-2" style="width:13px;height:13px;"></i> Hapus
+                </button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function openMenuModal(mode) {
+      modalMode = mode;
+      document.getElementById('menuForm').reset();
+      document.getElementById('menuIdField').value = '';
+      base64Gambar = ''; // Reset penampung base64
+      document.getElementById('imgPreview').src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
+      document.getElementById('modalTitle').textContent = mode === 'add' ? 'Tambah Menu Baru' : 'Edit Data Menu';
+      document.getElementById('menuModal').classList.add('show');
+      lucide.createIcons();
+    }
+
+    function closeMenuModal() {
+      document.getElementById('menuModal').classList.remove('show');
+    }
+
+    function editMenuPrep(id) {
+      const menu = allMenus.find(m => m.id === id);
+      if (!menu) return;
+      openMenuModal('edit');
+      document.getElementById('menuIdField').value = menu.id;
+      document.getElementById('namaMenu').value    = menu.nama;
+      document.getElementById('hargaMenu').value   = menu.harga;
+      document.getElementById('kategoriMenu').value= menu.kategori;
+      base64Gambar = menu.gambar || ''; // Masukkan data gambar lama
+      document.getElementById('imgPreview').src = base64Gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
+    }
+
+    async function submitMenu() {
+      const id       = document.getElementById('menuIdField').value;
+      const nama     = document.getElementById('namaMenu').value.trim();
+      const harga    = document.getElementById('hargaMenu').value;
+      const kategori = document.getElementById('kategoriMenu').value;
+      const gambar   = base64Gambar; // Menggunakan string Base64 yang sudah dibaca
+
+      if (!nama || !harga) { alert('Nama dan harga wajib diisi.'); return; }
+
+      const url    = modalMode === 'edit' ? `/api/menu/${id}` : '/api/menu';
+      const method = modalMode === 'edit' ? 'PUT' : 'POST';
+
+      const btn = document.getElementById('btnSimpanMenu');
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;"></i> Menyimpan...';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ nama, harga, kategori, gambar })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.pesan || 'Gagal menyimpan.');
+        closeMenuModal();
+        loadMenus();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;"></i> Simpan Menu';
+        lucide.createIcons();
+      }
+    }
+
+    async function hapusMenu(id, nama) {
+      if (!confirm(`Hapus menu "${nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+      try {
+        const res = await fetch(`/api/menu/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.pesan || 'Gagal menghapus.');
+        loadMenus();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      window.location.href = 'login.html';
+    }
+
+    // Tutup modal klik di luar
+    document.getElementById('menuModal').addEventListener('click', function(e) {
+      if (e.target === this) closeMenuModal();
+    });
+
+    loadMenus();
+  </script>
+</body>
+</html>

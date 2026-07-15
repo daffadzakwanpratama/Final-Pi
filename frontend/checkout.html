@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Uncle Joe</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { background: var(--surface-cream); }
+    .page-content { padding: var(--space-5); padding-bottom: 100px; }
+  </style>
+</head>
+<body class="page-wrapper">
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="cart.html" class="navbar-brand" style="gap:var(--space-2);font-size:0.9rem;">
+        <i data-lucide="arrow-left" style="width:18px;height:18px;color:var(--text-secondary);"></i>
+        Kembali
+      </a>
+      <div class="navbar-brand">
+        <i data-lucide="receipt" style="width:18px;height:18px;color:var(--coffee-500);"></i>
+        Konfirmasi Pesanan
+      </div>
+    </div>
+  </header>
+
+  <main class="page-content container">
+
+    <!-- Informasi Meja -->
+    <div class="card mt-5">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="armchair" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Informasi Meja
+      </div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Nomor Meja Anda</label>
+          <input type="text" id="nomorMejaInput" class="form-control" placeholder="Contoh: 5" required>
+          <div class="form-hint">
+            <i data-lucide="info" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
+            Pastikan nomor meja sesuai dengan meja tempat Anda duduk.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Pesanan -->
+    <div class="card mt-4">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="shopping-cart" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Ringkasan Pesanan
+      </div>
+      <div class="card-body">
+        <div id="checkoutItemsList" style="margin-bottom:var(--space-4);">
+          <!-- Diisi via JS -->
+        </div>
+        <div class="summary-box" style="margin-bottom:0;">
+          <div class="summary-row summary-total" style="margin-bottom:0;">
+            <span>Total Tagihan</span>
+            <span id="checkoutTotalVal">Rp 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Pembayaran -->
+    <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--status-process-bg);border:1px solid var(--status-process-border);border-radius:var(--radius-lg);display:flex;gap:var(--space-3);align-items:flex-start;">
+      <i data-lucide="info" style="width:18px;height:18px;color:var(--status-process-text);flex-shrink:0;margin-top:2px;"></i>
+      <div style="font-size:0.82rem;color:var(--status-process-text);line-height:1.5;">
+        <strong>Pembayaran di Kasir.</strong> Pesanan Anda akan segera diproses setelah tombol di bawah diklik. Silakan lakukan pembayaran kepada kasir setelah pesanan siap.
+      </div>
+    </div>
+
+    <!-- Tombol Pesan -->
+    <div style="margin-top:var(--space-5);">
+      <button id="btnProsesPesanan" class="btn btn-primary btn-full btn-lg">
+        <i data-lucide="send" style="width:18px;height:18px;"></i>
+        Pesan Sekarang
+      </button>
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+    let cart = [];
+
+    function initCheckout() {
+      cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const noMeja = localStorage.getItem('nomor_meja') || '';
+      document.getElementById('nomorMejaInput').value = noMeja;
+
+      if (cart.length === 0) {
+        alert('Keranjang kosong. Silakan pilih menu terlebih dahulu.');
+        window.location.href = 'menu.html';
+        return;
+      }
+      renderSummary();
+    }
+
+    function renderSummary() {
+      const list = document.getElementById('checkoutItemsList');
+      let total = 0;
+
+      list.innerHTML = cart.map(item => {
+        const sub = item.harga * item.qty;
+        total += sub;
+        return `
+          <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:var(--space-3);color:var(--text-secondary);">
+            <span>${item.nama} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
+            <span style="font-weight:600;">Rp ${sub.toLocaleString('id-ID')}</span>
+          </div>`;
+      }).join('');
+
+      document.getElementById('checkoutTotalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    async function prosesCheckout() {
+      const meja = document.getElementById('nomorMejaInput').value.trim();
+      if (!meja) { alert('Nomor meja harus diisi.'); return; }
+
+      const payload = {
+        nomor_meja: meja,
+        items: cart.map(c => ({ menu_id: c.id, qty: c.qty }))
+      };
+
+      const btn = document.getElementById('btnProsesPesanan');
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-circle" style="width:18px;height:18px;"></i> Memproses...';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.pesan || 'Gagal mengirim pesanan.');
+
+        localStorage.removeItem('cart');
+        localStorage.setItem('nomor_meja', meja);
+        window.location.href = `status.html?id=${data.order_id}`;
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Pesan Sekarang';
+        lucide.createIcons();
+      }
+    }
+
+    document.getElementById('btnProsesPesanan').addEventListener('click', prosesCheckout);
+    initCheckout();
+  </script>
+</body>
+</html>

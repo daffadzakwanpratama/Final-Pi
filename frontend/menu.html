@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu — Uncle Joe</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { background: var(--surface-cream); }
+    .content { padding: var(--space-5) 0 var(--space-10) 0; }
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+      padding: 0 var(--space-5);
+    }
+    .menu-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); padding: 0 var(--space-5); }
+    .empty-state {
+      text-align: center;
+      padding: var(--space-12) var(--space-5);
+      color: var(--text-muted);
+    }
+    .empty-state-icon { margin: 0 auto var(--space-4) auto; color: var(--coffee-200); }
+    .modal-overlay { position: fixed; }
+    .modal-close-btn { position: absolute; }
+  </style>
+</head>
+<body class="page-wrapper">
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">
+        <i data-lucide="coffee" style="width:20px;height:20px;color:var(--coffee-500);"></i>
+        Uncle <span>Joe</span>
+      </a>
+      <div class="navbar-right">
+        <div class="meja-badge" id="mejaBadge">
+          <i data-lucide="armchair" style="width:12px;height:12px;"></i>
+          Meja —
+        </div>
+        <a href="cart.html" class="cart-btn" id="cartBtn">
+          <i data-lucide="shopping-cart" style="width:18px;height:18px;"></i>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Kategori -->
+  <div style="background: var(--surface-white); border-bottom: 1px solid var(--border);">
+    <div class="category-scroll" id="categoryScroll">
+      <button class="category-chip active" onclick="filterKategori('Semua', this)">
+        <i data-lucide="layout-grid" style="width:13px;height:13px;"></i> Semua
+      </button>
+      <button class="category-chip" onclick="filterKategori('Minuman', this)">
+      <i data-lucide="cup-soda" style="width:13px;height:13px;"></i> Minuman
+    </button>
+    <button class="category-chip" onclick="filterKategori('Makanan', this)">
+      <i data-lucide="utensils" style="width:13px;height:13px;"></i> Makanan
+    </button>
+    <button class="category-chip" onclick="filterKategori('Snack', this)">
+      <i data-lucide="cookie" style="width:13px;height:13px;"></i> Snack
+    </div>
+  </div>
+
+  <!-- Konten Menu -->
+  <main class="content">
+    <div class="section-title" id="sectionTitle">Semua Menu</div>
+    <div class="menu-list" id="menuList">
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="loader-circle" style="width:40px;height:40px;" id="loadingIcon"></i></div>
+        <p>Memuat menu...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Detail Menu -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="position:relative;">
+      <img id="modalImg" class="modal-img" src="" alt="">
+      <button class="modal-close-btn" onclick="closeModal()">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+      <div class="modal-body">
+        <span id="modalKategori" class="badge" style="background:var(--surface-beige);color:var(--coffee-600);border-color:var(--border);margin-bottom:var(--space-3);"></span>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;" id="modalNama">-</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--coffee-600);margin-bottom:var(--space-5);" id="modalHarga">-</div>
+        <button class="btn btn-primary btn-full btn-lg" id="btnAddToCart">
+          <i data-lucide="plus" style="width:18px;height:18px;"></i>
+          Tambah ke Keranjang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let listMenu = [];
+    let kategoriAktif = 'Semua';
+
+    // Ambil nomor meja dari URL / localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    let noMeja = urlParams.get('meja');
+    if (noMeja) { localStorage.setItem('nomor_meja', noMeja); }
+    else { noMeja = localStorage.getItem('nomor_meja'); }
+
+    if (!noMeja) { window.location.href = 'index.html'; }
+
+    document.getElementById('mejaBadge').innerHTML = `<i data-lucide="armchair" style="width:12px;height:12px;"></i> Meja ${noMeja}`;
+    lucide.createIcons();
+
+    // Ambil daftar menu dari server
+    async function loadMenu() {
+      try {
+        const res = await fetch('/api/menu');
+        if (!res.ok) throw new Error('Gagal memuat menu');
+        listMenu = await res.json();
+        renderMenu();
+      } catch (err) {
+        document.getElementById('menuList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon"><i data-lucide="wifi-off" style="width:40px;height:40px;"></i></div>
+            <p>Gagal memuat menu. Periksa koneksi Anda.</p>
+          </div>`;
+        lucide.createIcons();
+      }
+    }
+
+    // Render kartu menu
+    function renderMenu() {
+      const list = document.getElementById('menuList');
+      const filtered = listMenu.filter(m => kategoriAktif === 'Semua' || m.kategori === kategoriAktif);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon"><i data-lucide="package-open" style="width:40px;height:40px;"></i></div>
+            <p>Belum ada menu untuk kategori ini.</p>
+          </div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      list.innerHTML = filtered.map(m => `
+        <div class="menu-card" onclick="openModal(${m.id})">
+          <img class="menu-card-img" src="${m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'}" alt="${m.nama}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'">
+          <div class="menu-card-body">
+            <div class="menu-card-nama">${m.nama}</div>
+            <div class="menu-card-footer">
+              <div class="menu-card-harga">
+                <span>Rp</span>
+                <span>${m.harga.toLocaleString('id-ID')}</span>
+              </div>
+              <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id})">
+                Pesan
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Filter kategori
+    function filterKategori(kat, el) {
+      kategoriAktif = kat;
+      document.getElementById('sectionTitle').textContent = `${kat === 'Semua' ? 'Semua' : kat} Menu`;
+      document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderMenu();
+    }
+
+    // Modal
+    function openModal(id) {
+      const m = listMenu.find(x => x.id === id);
+      if (!m) return;
+      document.getElementById('modalImg').src = m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
+      document.getElementById('modalNama').textContent = m.nama;
+      document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
+      document.getElementById('modalKategori').textContent = m.kategori;
+      document.getElementById('btnAddToCart').onclick = () => addToCart(id);
+      document.getElementById('detailModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+
+    // Keranjang
+    function addToCart(id) {
+      const m = listMenu.find(x => x.id === id);
+      if (!m) return;
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const idx = cart.findIndex(c => c.id === id);
+      if (idx > -1) { cart[idx].qty++; }
+      else { cart.push({ id: m.id, nama: m.nama, harga: m.harga, gambar: m.gambar, qty: 1 }); }
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartBadge();
+      closeModal();
+      alert(`✓ "${m.nama}" telah dimasukkan ke keranjang!`);
+    }
+
+    function updateCartBadge() {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const total = cart.reduce((s, c) => s + c.qty, 0);
+      const badge = document.getElementById('cartCount');
+      badge.textContent = total;
+      if (total > 0) { badge.classList.add('show'); } else { badge.classList.remove('show'); }
+    }
+
+    // Tutup modal jika klik overlay
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    loadMenu();
+    updateCartBadge();
+  </script>
+</body>
+</html>
