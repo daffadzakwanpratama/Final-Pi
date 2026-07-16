@@ -40,3 +40,5 @@ app.listen(PORT, () => {
   console.log(` Panel Admin     : http://localhost:${PORT}/admin/login.html`);
   console.log(`================================================`);
 });
+
+module.exports = app;
