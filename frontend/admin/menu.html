@@ -42,6 +42,12 @@
           Menu
         </a>
       </div>
+      <div class="sidebar-nav-item">
+        <a href="categories.html" class="sidebar-nav-link">
+          <i data-lucide="tags" style="width:17px;height:17px;"></i>
+          Kategori
+        </a>
+      </div>
     </nav>
     <div class="sidebar-footer">
       <button onclick="logout()" class="sidebar-nav-link" style="width:100%;border:none;cursor:pointer;background:none;">
@@ -105,6 +111,9 @@
       <a href="menu.html" class="admin-mobile-nav-item active">
         <i data-lucide="utensils" style="width:20px;height:20px;"></i> Menu
       </a>
+      <a href="categories.html" class="admin-mobile-nav-item">
+        <i data-lucide="tags" style="width:20px;height:20px;"></i> Kategori
+      </a>
       <button onclick="logout()" class="admin-mobile-nav-item">
         <i data-lucide="log-out" style="width:20px;height:20px;"></i> Keluar
       </button>
@@ -135,22 +144,31 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label" for="kategoriMenu">Kategori</label>
+            <select id="kategoriMenu" class="form-control" required>
+              <!-- Dimuat secara dinamis -->
+            </select>
+          </div>
+
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:var(--space-4);">
+            <input type="checkbox" id="isHotIceMenu" style="width:18px;height:18px;cursor:pointer;" onchange="toggleHargaVarian()">
+            <label class="form-label" for="isHotIceMenu" style="margin-bottom:0;cursor:pointer;font-weight:600;">Memiliki Varian Hot & Ice</label>
+          </div>
+
+          <div class="form-group" id="hargaNormalGroup">
             <label class="form-label" for="hargaMenu">Harga (Rp)</label>
             <input type="number" id="hargaMenu" class="form-control" placeholder="Contoh: 18000" required min="0">
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="kategoriMenu">Kategori</label>
-            <select id="kategoriMenu" class="form-control" required>
-              <option value="Minuman">Minuman</option>
-              <option value="Makanan">Makanan</option>
-              <option value="Snack">Snack</option>
-            </select>
-          </div>
-
-          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:var(--space-5);">
-            <input type="checkbox" id="isHotIceMenu" style="width:18px;height:18px;cursor:pointer;">
-            <label class="form-label" for="isHotIceMenu" style="margin-bottom:0;cursor:pointer;font-weight:600;">Memiliki Varian Hot & Ice</label>
+          <div id="hargaVarianContainer" style="display:none;margin-bottom:var(--space-5);gap:var(--space-3);">
+            <div style="flex:1;">
+              <label class="form-label" for="hargaHotMenu">Harga Hot (Rp)</label>
+              <input type="number" id="hargaHotMenu" class="form-control" placeholder="Contoh: 16000" min="0">
+            </div>
+            <div style="flex:1;">
+              <label class="form-label" for="hargaIceMenu">Harga Ice (Rp)</label>
+              <input type="number" id="hargaIceMenu" class="form-control" placeholder="Contoh: 18000" min="0">
+            </div>
           </div>
 
           <div class="form-group">
@@ -176,7 +194,7 @@
     const token = localStorage.getItem('admin_token');
     if (!token) { alert('Akses ditolak.'); window.location.href = 'login.html'; }
 
-    let allMenus = [];
+    let allCategories = [];
     let modalMode = 'add';
     let base64Gambar = '';
 
@@ -200,6 +218,19 @@
       reader.readAsDataURL(file);
     }
 
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error();
+        allCategories = await res.json();
+        
+        const select = document.getElementById('kategoriMenu');
+        select.innerHTML = allCategories.map(c => `<option value="${c.nama}">${c.nama}</option>`).join('');
+      } catch {
+        alert('Gagal mengambil daftar kategori.');
+      }
+    }
+
     async function loadMenus() {
       try {
         const res = await fetch('/api/menu');
@@ -208,6 +239,26 @@
         renderMenuTable();
       } catch {
         alert('Gagal mengambil daftar menu.');
+      }
+    }
+
+    function toggleHargaVarian() {
+      const isChecked = document.getElementById('isHotIceMenu').checked;
+      const container = document.getElementById('hargaVarianContainer');
+      const normalGroup = document.getElementById('hargaNormalGroup');
+      
+      if (isChecked) {
+        container.style.display = 'flex';
+        normalGroup.style.display = 'none';
+        document.getElementById('hargaMenu').required = false;
+        document.getElementById('hargaHotMenu').required = true;
+        document.getElementById('hargaIceMenu').required = true;
+      } else {
+        container.style.display = 'none';
+        normalGroup.style.display = 'block';
+        document.getElementById('hargaMenu').required = true;
+        document.getElementById('hargaHotMenu').required = false;
+        document.getElementById('hargaIceMenu').required = false;
       }
     }
 
@@ -224,6 +275,15 @@
 
       tbody.innerHTML = allMenus.map(menu => {
         const img = menu.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200';
+        let hargaText = `Rp ${menu.harga.toLocaleString('id-ID')}`;
+        if (menu.is_hot_ice) {
+          const hHot = menu.harga_hot ? menu.harga_hot.toLocaleString('id-ID') : '-';
+          const hIce = menu.harga_ice ? menu.harga_ice.toLocaleString('id-ID') : '-';
+          hargaText = `<div style="font-size:0.78rem;line-height:1.2;">
+            <div>Hot: Rp ${hHot}</div>
+            <div>Ice: Rp ${hIce}</div>
+          </div>`;
+        }
         return `
           <tr>
             <td style="color:var(--text-muted);font-size:0.82rem;">#${menu.id}</td>
@@ -240,7 +300,7 @@
                 ${menu.is_hot_ice ? 'Hot / Ice' : 'Normal'}
               </span>
             </td>
-            <td style="font-weight:600;">Rp ${menu.harga.toLocaleString('id-ID')}</td>
+            <td style="font-weight:600;">${hargaText}</td>
             <td>
               <div style="display:flex;gap:var(--space-2);">
                 <button onclick="editMenuPrep(${menu.id})" class="btn btn-secondary btn-sm" style="width:auto;">
@@ -263,6 +323,7 @@
       base64Gambar = ''; // Reset penampung base64
       document.getElementById('imgPreview').src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
       document.getElementById('modalTitle').textContent = mode === 'add' ? 'Tambah Menu Baru' : 'Edit Data Menu';
+      toggleHargaVarian();
       document.getElementById('menuModal').classList.add('show');
       lucide.createIcons();
     }
@@ -281,6 +342,9 @@
       document.getElementById('kategoriMenu').value= menu.kategori;
       document.getElementById('deskripsiMenu').value = menu.deskripsi || '';
       document.getElementById('isHotIceMenu').checked = !!menu.is_hot_ice;
+      document.getElementById('hargaHotMenu').value = menu.harga_hot || '';
+      document.getElementById('hargaIceMenu').value = menu.harga_ice || '';
+      toggleHargaVarian();
       base64Gambar = menu.gambar || ''; // Masukkan data gambar lama
       document.getElementById('imgPreview').src = base64Gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
     }
@@ -292,9 +356,14 @@
       const harga      = document.getElementById('hargaMenu').value;
       const kategori   = document.getElementById('kategoriMenu').value;
       const is_hot_ice = document.getElementById('isHotIceMenu').checked;
+      const harga_hot  = document.getElementById('hargaHotMenu').value;
+      const harga_ice  = document.getElementById('hargaIceMenu').value;
       const gambar     = base64Gambar; // Menggunakan string Base64 yang sudah dibaca
 
-      if (!nama || !harga) { alert('Nama dan harga wajib diisi.'); return; }
+      if (!nama || (!is_hot_ice && !harga) || (is_hot_ice && (!harga_hot || !harga_ice))) { 
+        alert('Mohon isi nama menu dan harga secara lengkap.'); 
+        return; 
+      }
 
       const url    = modalMode === 'edit' ? `/api/menu/${id}` : '/api/menu';
       const method = modalMode === 'edit' ? 'PUT' : 'POST';
@@ -308,7 +377,7 @@
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ nama, harga, kategori, gambar, deskripsi, is_hot_ice })
+          body: JSON.stringify({ nama, harga, kategori, gambar, deskripsi, is_hot_ice, harga_hot, harga_ice })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.pesan || 'Gagal menyimpan.');
@@ -349,7 +418,11 @@
       if (e.target === this) closeMenuModal();
     });
 
-    loadMenus();
+    async function initPage() {
+      await loadCategories();
+      await loadMenus();
+    }
+    initPage();
   </script>
 </body>
 </html>

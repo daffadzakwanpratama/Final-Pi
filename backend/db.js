@@ -36,8 +36,22 @@ async function inisialisasiDatabase() {
     // Migrasi kolom tambahan untuk Deskripsi & Varian
     await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS deskripsi TEXT');
     await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS is_hot_ice BOOLEAN DEFAULT FALSE');
+    await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS harga_hot INT');
+    await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS harga_ice INT');
     await pool.query('ALTER TABLE order_items ADD COLUMN IF NOT EXISTS varian VARCHAR(20)');
-    console.log('-> Migrasi kolom deskripsi, is_hot_ice, dan varian berhasil.');
+    
+    // Pembuatan tabel kategori dinamis
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS categories (
+        id SERIAL PRIMARY KEY,
+        nama VARCHAR(50) UNIQUE NOT NULL
+      )
+    `);
+    
+    // Seed Kategori Awal
+    await pool.query("INSERT INTO categories (nama) VALUES ('Minuman'), ('Makanan'), ('Snack') ON CONFLICT DO NOTHING");
+    
+    console.log('-> Migrasi kolom deskripsi, is_hot_ice, harga varian, dan tabel kategori berhasil.');
 
     // Memeriksa keberadaan user admin default
     const userCheck = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);

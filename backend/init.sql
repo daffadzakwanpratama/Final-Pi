@@ -7,7 +7,16 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL
 );
 
--- 2. Tabel Menu
+-- 2. Tabel Kategori Dinamis
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- Seed kategori default
+INSERT INTO categories (nama) VALUES ('Minuman'), ('Makanan'), ('Snack') ON CONFLICT DO NOTHING;
+
+-- 3. Tabel Menu
 CREATE TABLE IF NOT EXISTS menu (
     id SERIAL PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
@@ -15,10 +24,12 @@ CREATE TABLE IF NOT EXISTS menu (
     gambar TEXT, -- Berisi URL gambar/Base64
     kategori VARCHAR(50) NOT NULL,
     deskripsi TEXT,
-    is_hot_ice BOOLEAN DEFAULT FALSE
+    is_hot_ice BOOLEAN DEFAULT FALSE,
+    harga_hot INT,
+    harga_ice INT
 );
 
--- 3. Tabel Orders
+-- 4. Tabel Orders
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     nomor_meja VARCHAR(10) NOT NULL,
@@ -26,7 +37,7 @@ CREATE TABLE IF NOT EXISTS orders (
     status VARCHAR(20) DEFAULT 'Menunggu' -- 'Menunggu', 'Diproses', 'Siap', 'Selesai'
 );
 
--- 4. Tabel Order Items (Detail item pesanan)
+-- 5. Tabel Order Items (Detail item pesanan)
 CREATE TABLE IF NOT EXISTS order_items (
     id SERIAL PRIMARY KEY,
     order_id INT REFERENCES orders(id) ON DELETE CASCADE,

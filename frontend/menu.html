@@ -54,17 +54,7 @@
   <!-- Filter Kategori -->
   <div style="background: var(--surface-white); border-bottom: 1px solid var(--border);">
     <div class="category-scroll" id="categoryScroll">
-      <button class="category-chip active" onclick="filterKategori('Semua', this)">
-        <i data-lucide="layout-grid" style="width:13px;height:13px;"></i> Semua
-      </button>
-      <button class="category-chip" onclick="filterKategori('Minuman', this)">
-      <i data-lucide="cup-soda" style="width:13px;height:13px;"></i> Minuman
-    </button>
-    <button class="category-chip" onclick="filterKategori('Makanan', this)">
-      <i data-lucide="utensils" style="width:13px;height:13px;"></i> Makanan
-    </button>
-    <button class="category-chip" onclick="filterKategori('Snack', this)">
-      <i data-lucide="cookie" style="width:13px;height:13px;"></i> Snack
+      <!-- Dimuat secara dinamis -->
     </div>
   </div>
 
@@ -132,6 +122,46 @@
     document.getElementById('mejaBadge').innerHTML = `<i data-lucide="armchair" style="width:12px;height:12px;"></i> Meja ${noMeja}`;
     lucide.createIcons();
 
+    function getCategoryIcon(name) {
+      const n = name.toLowerCase();
+      if (n.includes('minum') || n.includes('drink') || n.includes('kopi') || n.includes('coffee') || n.includes('tea') || n.includes('susu')) return 'cup-soda';
+      if (n.includes('makan') || n.includes('food') || n.includes('rice') || n.includes('mie') || n.includes('daging')) return 'utensils';
+      if (n.includes('cemil') || n.includes('snack') || n.includes('kue') || n.includes('roti') || n.includes('cookie') || n.includes('goreng')) return 'cookie';
+      return 'tag';
+    }
+
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error();
+        listCategories = await res.json();
+        renderCategoryChips();
+      } catch {
+        console.error('Gagal memuat kategori.');
+      }
+    }
+
+    function renderCategoryChips() {
+      const container = document.getElementById('categoryScroll');
+      let chipsHtml = `
+        <button class="category-chip active" onclick="filterKategori('Semua', this)">
+          <i data-lucide="layout-grid" style="width:13px;height:13px;"></i> Semua
+        </button>
+      `;
+
+      chipsHtml += listCategories.map(cat => {
+        const iconName = getCategoryIcon(cat.nama);
+        return `
+          <button class="category-chip" onclick="filterKategori('${cat.nama}', this)">
+            <i data-lucide="${iconName}" style="width:13px;height:13px;"></i> ${cat.nama}
+          </button>
+        `;
+      }).join('');
+
+      container.innerHTML = chipsHtml;
+      lucide.createIcons();
+    }
+
     // Ambil daftar menu dari server
     async function loadMenu() {
       try {
@@ -164,23 +194,25 @@
         return;
       }
 
-      list.innerHTML = filtered.map(m => `
-        <div class="menu-card" onclick="openModal(${m.id})">
-          <img class="menu-card-img" src="${m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'}" alt="${m.nama}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'">
-          <div class="menu-card-body">
-            <div class="menu-card-nama">${m.nama}</div>
-            <div class="menu-card-footer">
-              <div class="menu-card-harga">
-                <span>Rp</span>
-                <span>${m.harga.toLocaleString('id-ID')}</span>
+      list.innerHTML = filtered.map(m => {
+        return `
+          <div class="menu-card" onclick="openModal(${m.id})">
+            <img class="menu-card-img" src="${m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'}" alt="${m.nama}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400'">
+            <div class="menu-card-body">
+              <div class="menu-card-nama">${m.nama}</div>
+              <div class="menu-card-footer">
+                <div class="menu-card-harga" style="font-size:0.75rem;">
+                  <span>${m.is_hot_ice ? 'Mulai' : 'Rp'}</span>
+                  <span>${m.is_hot_ice ? Math.min(m.harga_hot || 0, m.harga_ice || 0).toLocaleString('id-ID') : m.harga.toLocaleString('id-ID')}</span>
+                </div>
+                <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id}, true)">
+                  Pesan
+                </button>
               </div>
-              <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id}, true)">
-                Pesan
-              </button>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
       lucide.createIcons();
     }
 
@@ -199,23 +231,28 @@
       if (!m) return;
       document.getElementById('modalImg').src = m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
       document.getElementById('modalNama').textContent = m.nama;
-      document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
       document.getElementById('modalKategori').textContent = m.kategori;
       document.getElementById('modalDeskripsi').textContent = m.deskripsi || 'Tidak ada deskripsi untuk menu ini.';
       
       const vSec = document.getElementById('variantSection');
       if (m.is_hot_ice) {
         vSec.style.display = 'block';
-        selectVariant('Ice'); // Default ke Ice
+        
+        // Overwrite click events untuk meneruskan menu ID
+        document.getElementById('optHot').onclick = () => selectVariant('Hot', id);
+        document.getElementById('optIce').onclick = () => selectVariant('Ice', id);
+        
+        selectVariant('Ice', id); // Default ke Ice
       } else {
         vSec.style.display = 'none';
+        document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
       }
 
       document.getElementById('btnAddToCart').onclick = () => addToCart(id, false);
       document.getElementById('detailModal').classList.add('show');
     }
 
-    function selectVariant(val) {
+    function selectVariant(val, menuId) {
       document.querySelectorAll('.variant-opt').forEach(el => {
         el.style.borderColor = 'var(--border)';
         el.style.background = 'var(--surface-white)';
@@ -226,6 +263,13 @@
       selected.style.background = 'var(--primary-light)';
       selected.style.color = 'var(--primary)';
       selected.querySelector('input').checked = true;
+
+      // Update harga modal sesuai varian
+      const m = listMenu.find(x => x.id === menuId);
+      if (m) {
+        const hargaVarian = val === 'Hot' ? m.harga_hot : m.harga_ice;
+        document.getElementById('modalHarga').textContent = `Rp ${hargaVarian.toLocaleString('id-ID')}`;
+      }
     }
 
     function closeModal() {
@@ -244,10 +288,13 @@
       }
 
       let selectedVarian = null;
+      let finalHarga = m.harga;
+
       if (m.is_hot_ice) {
         const checked = document.querySelector('input[name="variantOpt"]:checked');
         if (checked) {
           selectedVarian = checked.value;
+          finalHarga = selectedVarian === 'Hot' ? m.harga_hot : m.harga_ice;
         }
       }
 
@@ -259,7 +306,7 @@
         cart.push({ 
           id: m.id, 
           nama: m.nama, 
-          harga: m.harga, 
+          harga: finalHarga, 
           gambar: m.gambar, 
           qty: 1, 
           varian: selectedVarian 
@@ -286,8 +333,12 @@
       if (e.target === this) closeModal();
     });
 
-    loadMenu();
-    updateCartBadge();
+    async function initPage() {
+      await loadCategories();
+      await loadMenu();
+      updateCartBadge();
+    }
+    initPage();
   </script>
 </body>
 </html>

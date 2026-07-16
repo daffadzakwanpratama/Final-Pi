@@ -35,15 +35,24 @@ router.get('/:id', async (req, res) => {
 // 3. POST /api/menu
 // Deskripsi: Menambahkan menu baru (Akses Admin)
 router.post('/', verifikasiToken, async (req, res) => {
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice } = req.body;
+  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice } = req.body;
 
   if (!nama || !harga || !kategori) {
     return res.status(400).json({ pesan: 'Nama, harga, dan kategori wajib diisi.' });
   }
 
   try {
-    const queryStr = 'INSERT INTO menu (nama, harga, gambar, kategori, deskripsi, is_hot_ice) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-    const values = [nama, parseInt(harga), gambar || '', kategori, deskripsi || '', !!is_hot_ice];
+    const queryStr = 'INSERT INTO menu (nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+    const values = [
+      nama, 
+      parseInt(harga), 
+      gambar || '', 
+      kategori, 
+      deskripsi || '', 
+      !!is_hot_ice, 
+      is_hot_ice ? parseInt(harga_hot || 0) : null,
+      is_hot_ice ? parseInt(harga_ice || 0) : null
+    ];
     
     const resInsert = await db.query(queryStr, values);
     res.status(201).json({
@@ -60,7 +69,7 @@ router.post('/', verifikasiToken, async (req, res) => {
 // Deskripsi: Mengubah data menu berdasarkan ID (Akses Admin)
 router.put('/:id', verifikasiToken, async (req, res) => {
   const { id } = req.params;
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice } = req.body;
+  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice } = req.body;
 
   if (!nama || !harga || !kategori) {
     return res.status(400).json({ pesan: 'Nama, harga, dan kategori wajib diisi.' });
@@ -73,8 +82,18 @@ router.put('/:id', verifikasiToken, async (req, res) => {
       return res.status(404).json({ pesan: 'Menu tidak ditemukan.' });
     }
 
-    const queryStr = 'UPDATE menu SET nama = $1, harga = $2, gambar = $3, kategori = $4, deskripsi = $5, is_hot_ice = $6 WHERE id = $7 RETURNING *';
-    const values = [nama, parseInt(harga), gambar || '', kategori, deskripsi || '', !!is_hot_ice, id];
+    const queryStr = 'UPDATE menu SET nama = $1, harga = $2, gambar = $3, kategori = $4, deskripsi = $5, is_hot_ice = $6, harga_hot = $7, harga_ice = $8 WHERE id = $9 RETURNING *';
+    const values = [
+      nama, 
+      parseInt(harga), 
+      gambar || '', 
+      kategori, 
+      deskripsi || '', 
+      !!is_hot_ice, 
+      is_hot_ice ? parseInt(harga_hot || 0) : null,
+      is_hot_ice ? parseInt(harga_ice || 0) : null,
+      id
+    ];
 
     const resUpdate = await db.query(queryStr, values);
     res.json({

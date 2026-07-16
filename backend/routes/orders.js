@@ -37,13 +37,24 @@ router.post('/', async (req, res) => {
         throw new Error('Data item pesanan tidak valid.');
       }
 
-      // Ambil harga menu dari database untuk menghitung subtotal
-      const menuRes = await client.query('SELECT harga FROM menu WHERE id = $1', [menu_id]);
+      // Ambil harga menu dari database (termasuk harga varian) untuk menghitung subtotal
+      const menuRes = await client.query('SELECT harga, is_hot_ice, harga_hot, harga_ice FROM menu WHERE id = $1', [menu_id]);
       if (menuRes.rows.length === 0) {
         throw new Error(`Menu dengan ID ${menu_id} tidak ditemukan.`);
       }
       
-      const harga = menuRes.rows[0].harga;
+      const menu = menuRes.rows[0];
+      let harga = menu.harga;
+
+      // Gunakan harga varian jika is_hot_ice aktif dan varian terdefinisi
+      if (menu.is_hot_ice) {
+        if (varian === 'Hot' && menu.harga_hot !== null) {
+          harga = menu.harga_hot;
+        } else if (varian === 'Ice' && menu.harga_ice !== null) {
+          harga = menu.harga_ice;
+        }
+      }
+
       const subtotal = harga * qty;
 
       const insertItemQuery = `
