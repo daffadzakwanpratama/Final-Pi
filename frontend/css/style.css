@@ -323,6 +323,17 @@ textarea {
   background: #fee2e2;
 }
 
+.btn-success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+.btn-success:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);
