@@ -89,7 +89,26 @@
       <div class="modal-body">
         <span id="modalKategori" class="badge" style="background:var(--surface-beige);color:var(--coffee-600);border-color:var(--border);margin-bottom:var(--space-3);"></span>
         <div style="font-size:1.3rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;" id="modalNama">-</div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--coffee-600);margin-bottom:var(--space-5);" id="modalHarga">-</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--coffee-600);margin-bottom:var(--space-4);" id="modalHarga">-</div>
+        
+        <!-- Deskripsi Menu -->
+        <div id="modalDeskripsi" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:var(--space-5);line-height:1.5;">-</div>
+        
+        <!-- Varian Section -->
+        <div id="variantSection" style="margin-bottom:var(--space-5);display:none;">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Pilih Varian</div>
+          <div style="display:flex;gap:var(--space-2);">
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;font-weight:600;font-size:0.85rem;transition:var(--transition);" class="variant-opt" id="optHot" onclick="selectVariant('Hot')">
+              <input type="radio" name="variantOpt" value="Hot" style="display:none;">
+              <i data-lucide="flame" style="width:14px;height:14px;color:#dc2626;"></i> Hot
+            </label>
+            <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-md);border:1.5px solid var(--border);cursor:pointer;font-weight:600;font-size:0.85rem;transition:var(--transition);" class="variant-opt" id="optIce" onclick="selectVariant('Ice')">
+              <input type="radio" name="variantOpt" value="Ice" style="display:none;">
+              <i data-lucide="snowflake" style="width:14px;height:14px;color:#2563eb;"></i> Ice
+            </label>
+          </div>
+        </div>
+
         <button class="btn btn-primary btn-full btn-lg" id="btnAddToCart">
           <i data-lucide="plus" style="width:18px;height:18px;"></i>
           Tambah ke Keranjang
@@ -155,7 +174,7 @@
                 <span>Rp</span>
                 <span>${m.harga.toLocaleString('id-ID')}</span>
               </div>
-              <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id})">
+              <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id}, true)">
                 Pesan
               </button>
             </div>
@@ -182,8 +201,31 @@
       document.getElementById('modalNama').textContent = m.nama;
       document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
       document.getElementById('modalKategori').textContent = m.kategori;
-      document.getElementById('btnAddToCart').onclick = () => addToCart(id);
+      document.getElementById('modalDeskripsi').textContent = m.deskripsi || 'Tidak ada deskripsi untuk menu ini.';
+      
+      const vSec = document.getElementById('variantSection');
+      if (m.is_hot_ice) {
+        vSec.style.display = 'block';
+        selectVariant('Ice'); // Default ke Ice
+      } else {
+        vSec.style.display = 'none';
+      }
+
+      document.getElementById('btnAddToCart').onclick = () => addToCart(id, false);
       document.getElementById('detailModal').classList.add('show');
+    }
+
+    function selectVariant(val) {
+      document.querySelectorAll('.variant-opt').forEach(el => {
+        el.style.borderColor = 'var(--border)';
+        el.style.background = 'var(--surface-white)';
+        el.style.color = 'var(--text-secondary)';
+      });
+      const selected = document.getElementById(val === 'Hot' ? 'optHot' : 'optIce');
+      selected.style.borderColor = 'var(--primary)';
+      selected.style.background = 'var(--primary-light)';
+      selected.style.color = 'var(--primary)';
+      selected.querySelector('input').checked = true;
     }
 
     function closeModal() {
@@ -191,17 +233,44 @@
     }
 
     // Keranjang
-    function addToCart(id) {
+    function addToCart(id, checkVarian = false) {
       const m = listMenu.find(x => x.id === id);
       if (!m) return;
+
+      // Jika memesan langsung dari kartu menu grid luar dan memiliki varian hot/ice, buka modal dahulu
+      if (checkVarian && m.is_hot_ice) {
+        openModal(id);
+        return;
+      }
+
+      let selectedVarian = null;
+      if (m.is_hot_ice) {
+        const checked = document.querySelector('input[name="variantOpt"]:checked');
+        if (checked) {
+          selectedVarian = checked.value;
+        }
+      }
+
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const idx = cart.findIndex(c => c.id === id);
-      if (idx > -1) { cart[idx].qty++; }
-      else { cart.push({ id: m.id, nama: m.nama, harga: m.harga, gambar: m.gambar, qty: 1 }); }
+      const idx = cart.findIndex(c => c.id === id && c.varian === selectedVarian);
+      if (idx > -1) { 
+        cart[idx].qty++; 
+      } else { 
+        cart.push({ 
+          id: m.id, 
+          nama: m.nama, 
+          harga: m.harga, 
+          gambar: m.gambar, 
+          qty: 1, 
+          varian: selectedVarian 
+        }); 
+      }
       localStorage.setItem('cart', JSON.stringify(cart));
       updateCartBadge();
       closeModal();
-      alert(`✓ "${m.nama}" telah dimasukkan ke keranjang!`);
+      
+      const vSuffix = selectedVarian ? ` (${selectedVarian})` : '';
+      alert(`✓ "${m.nama}${vSuffix}" telah dimasukkan ke keranjang!`);
     }
 
     function updateCartBadge() {

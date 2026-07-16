@@ -142,8 +142,9 @@
       let total = 0;
       document.getElementById('orderItemsList').innerHTML = items.map(item => {
         total += item.subtotal;
+        const vText = item.varian ? ` (${item.varian})` : '';
         return `<div class="order-item-row">
-          <span>${item.nama || 'Menu'} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
+          <span>${item.nama || 'Menu'}${vText} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
           <span style="font-weight:600;">Rp ${item.subtotal.toLocaleString('id-ID')}</span>
         </div>`;
       }).join('');

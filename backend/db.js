@@ -33,6 +33,12 @@ async function inisialisasiDatabase() {
     await pool.query(sql);
     console.log('-> Struktur tabel database berhasil diverifikasi/dibuat.');
 
+    // Migrasi kolom tambahan untuk Deskripsi & Varian
+    await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS deskripsi TEXT');
+    await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS is_hot_ice BOOLEAN DEFAULT FALSE');
+    await pool.query('ALTER TABLE order_items ADD COLUMN IF NOT EXISTS varian VARCHAR(20)');
+    console.log('-> Migrasi kolom deskripsi, is_hot_ice, dan varian berhasil.');
+
     // Memeriksa keberadaan user admin default
     const userCheck = await pool.query('SELECT * FROM users WHERE username = $1', ['admin']);
     if (userCheck.rows.length === 0) {

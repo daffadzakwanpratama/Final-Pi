@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
 
     // 2. Simpan setiap item ke tabel order_items
     for (const item of items) {
-      const { menu_id, qty } = item;
+      const { menu_id, qty, varian } = item;
       
       if (!menu_id || qty <= 0) {
         throw new Error('Data item pesanan tidak valid.');
@@ -47,10 +47,10 @@ router.post('/', async (req, res) => {
       const subtotal = harga * qty;
 
       const insertItemQuery = `
-        INSERT INTO order_items (order_id, menu_id, qty, subtotal) 
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO order_items (order_id, menu_id, qty, subtotal, varian) 
+        VALUES ($1, $2, $3, $4, $5)
       `;
-      await client.query(insertItemQuery, [orderId, menu_id, qty, subtotal]);
+      await client.query(insertItemQuery, [orderId, menu_id, qty, subtotal, varian || null]);
     }
 
     // Melakukan Commit jika semua operasi berhasil

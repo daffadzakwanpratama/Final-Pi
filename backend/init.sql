@@ -12,8 +12,10 @@ CREATE TABLE IF NOT EXISTS menu (
     id SERIAL PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
     harga INT NOT NULL,
-    gambar TEXT, -- Berisi URL gambar
-    kategori VARCHAR(50) NOT NULL
+    gambar TEXT, -- Berisi URL gambar/Base64
+    kategori VARCHAR(50) NOT NULL,
+    deskripsi TEXT,
+    is_hot_ice BOOLEAN DEFAULT FALSE
 );
 
 -- 3. Tabel Orders
@@ -30,5 +32,6 @@ CREATE TABLE IF NOT EXISTS order_items (
     order_id INT REFERENCES orders(id) ON DELETE CASCADE,
     menu_id INT REFERENCES menu(id) ON DELETE SET NULL,
     qty INT NOT NULL,
-    subtotal INT NOT NULL
+    subtotal INT NOT NULL,
+    varian VARCHAR(20) -- 'Hot', 'Ice', atau NULL
 );

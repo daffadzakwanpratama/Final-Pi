@@ -74,15 +74,16 @@
               <tr>
                 <th>#</th>
                 <th>Gambar</th>
-                <th>Nama Menu</th>
+                <th>Nama Menu & Deskripsi</th>
                 <th>Kategori</th>
+                <th>Varian</th>
                 <th>Harga</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody id="menuTableBody">
               <tr>
-                <td colspan="6" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
+                <td colspan="7" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
                   <i data-lucide="loader-circle" style="width:24px;height:24px;margin:0 auto var(--space-3) auto;display:block;"></i>
                   Memuat daftar menu...
                 </td>
@@ -129,6 +130,11 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label" for="deskripsiMenu">Deskripsi Menu</label>
+            <textarea id="deskripsiMenu" class="form-control" placeholder="Tulis deskripsi atau komposisi menu... (Opsional)" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
             <label class="form-label" for="hargaMenu">Harga (Rp)</label>
             <input type="number" id="hargaMenu" class="form-control" placeholder="Contoh: 18000" required min="0">
           </div>
@@ -140,6 +146,11 @@
               <option value="Makanan">Makanan</option>
               <option value="Snack">Snack</option>
             </select>
+          </div>
+
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:var(--space-5);">
+            <input type="checkbox" id="isHotIceMenu" style="width:18px;height:18px;cursor:pointer;">
+            <label class="form-label" for="isHotIceMenu" style="margin-bottom:0;cursor:pointer;font-weight:600;">Memiliki Varian Hot & Ice</label>
           </div>
 
           <div class="form-group">
@@ -203,7 +214,7 @@
     function renderMenuTable() {
       const tbody = document.getElementById('menuTableBody');
       if (!allMenus.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:var(--space-8);color:var(--text-muted);">
           <i data-lucide="package-open" style="width:32px;height:32px;margin:0 auto var(--space-3) auto;display:block;"></i>
           Belum ada menu terdaftar. Tambahkan menu baru.
         </td></tr>`;
@@ -219,8 +230,16 @@
             <td>
               <img class="menu-thumb" src="${img}" alt="${menu.nama}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200'">
             </td>
-            <td style="font-weight:600;color:var(--text-primary);">${menu.nama}</td>
+            <td>
+              <div style="font-weight:600;color:var(--text-primary);">${menu.nama}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;max-width:240px;white-space:normal;line-height:1.3;">${menu.deskripsi || '-'}</div>
+            </td>
             <td><span class="badge" style="background:var(--surface-beige);color:var(--coffee-600);border-color:var(--border);">${menu.kategori}</span></td>
+            <td>
+              <span class="badge ${menu.is_hot_ice ? 'badge-menunggu' : 'badge-selesai'}">
+                ${menu.is_hot_ice ? 'Hot / Ice' : 'Normal'}
+              </span>
+            </td>
             <td style="font-weight:600;">Rp ${menu.harga.toLocaleString('id-ID')}</td>
             <td>
               <div style="display:flex;gap:var(--space-2);">
@@ -260,16 +279,20 @@
       document.getElementById('namaMenu').value    = menu.nama;
       document.getElementById('hargaMenu').value   = menu.harga;
       document.getElementById('kategoriMenu').value= menu.kategori;
+      document.getElementById('deskripsiMenu').value = menu.deskripsi || '';
+      document.getElementById('isHotIceMenu').checked = !!menu.is_hot_ice;
       base64Gambar = menu.gambar || ''; // Masukkan data gambar lama
       document.getElementById('imgPreview').src = base64Gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
     }
 
     async function submitMenu() {
-      const id       = document.getElementById('menuIdField').value;
-      const nama     = document.getElementById('namaMenu').value.trim();
-      const harga    = document.getElementById('hargaMenu').value;
-      const kategori = document.getElementById('kategoriMenu').value;
-      const gambar   = base64Gambar; // Menggunakan string Base64 yang sudah dibaca
+      const id         = document.getElementById('menuIdField').value;
+      const nama       = document.getElementById('namaMenu').value.trim();
+      const deskripsi  = document.getElementById('deskripsiMenu').value.trim();
+      const harga      = document.getElementById('hargaMenu').value;
+      const kategori   = document.getElementById('kategoriMenu').value;
+      const is_hot_ice = document.getElementById('isHotIceMenu').checked;
+      const gambar     = base64Gambar; // Menggunakan string Base64 yang sudah dibaca
 
       if (!nama || !harga) { alert('Nama dan harga wajib diisi.'); return; }
 
@@ -285,7 +308,7 @@
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ nama, harga, kategori, gambar })
+          body: JSON.stringify({ nama, harga, kategori, gambar, deskripsi, is_hot_ice })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.pesan || 'Gagal menyimpan.');

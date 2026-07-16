@@ -225,12 +225,13 @@
         const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         const tgl   = new Date(order.tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'short' });
 
-        const itemsHtml = (order.items || []).map(item =>
-          `<div class="order-item-row">
-            <span>${item.nama} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
+        const itemsHtml = (order.items || []).map(item => {
+          const vText = item.varian ? ` (${item.varian})` : '';
+          return `<div class="order-item-row">
+            <span>${item.nama}${vText} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
             <span style="font-weight:600;">Rp ${Number(item.subtotal).toLocaleString('id-ID')}</span>
-          </div>`
-        ).join('');
+          </div>`;
+        }).join('');
 
         // Hitung total dari sum items.subtotal (kolom total_harga tidak ada di tabel orders)
         const totalHarga = (order.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0);

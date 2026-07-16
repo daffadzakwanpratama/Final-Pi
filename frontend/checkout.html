@@ -108,9 +108,10 @@
       list.innerHTML = cart.map(item => {
         const sub = item.harga * item.qty;
         total += sub;
+        const vText = item.varian ? ` (${item.varian})` : '';
         return `
           <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:var(--space-3);color:var(--text-secondary);">
-            <span>${item.nama} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
+            <span>${item.nama}${vText} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
             <span style="font-weight:600;">Rp ${sub.toLocaleString('id-ID')}</span>
           </div>`;
       }).join('');
@@ -124,7 +125,7 @@
 
       const payload = {
         nomor_meja: meja,
-        items: cart.map(c => ({ menu_id: c.id, qty: c.qty }))
+        items: cart.map(c => ({ menu_id: c.id, qty: c.qty, varian: c.varian }))
       };
 
       const btn = document.getElementById('btnProsesPesanan');
