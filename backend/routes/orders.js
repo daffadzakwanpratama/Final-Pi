@@ -8,8 +8,8 @@ const midtransClient = require('midtrans-client');
 // Inisialisasi Midtrans Snap Client
 const snapClient = new midtransClient.Snap({
   isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
-  serverKey: process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-VpD3Xg1J8v8jWwN29Q3pS_yC',
-  clientKey: process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-N_YwW9sE40Y1pD7-'
+  serverKey: (process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-VpD3Xg1J8v8jWwN29Q3pS_yC').trim(),
+  clientKey: (process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-N_YwW9sE40Y1pD7-').trim()
 });
 
 // 1. POST /api/orders
@@ -57,18 +57,18 @@ router.post('/', async (req, res) => {
       }
       
       const menu = menuRes.rows[0];
-      let harga = menu.harga;
+      let harga = Number(menu.harga);
 
       // Gunakan harga varian jika is_hot_ice aktif dan varian terdefinisi
       if (menu.is_hot_ice) {
         if (varian === 'Hot' && menu.harga_hot !== null) {
-          harga = menu.harga_hot;
+          harga = Number(menu.harga_hot);
         } else if (varian === 'Ice' && menu.harga_ice !== null) {
-          harga = menu.harga_ice;
+          harga = Number(menu.harga_ice);
         }
       }
 
-      const subtotal = harga * qty;
+      const subtotal = harga * Number(qty);
       totalHarga += subtotal;
 
       const insertItemQuery = `
@@ -79,9 +79,9 @@ router.post('/', async (req, res) => {
 
       itemDetails.push({
         id: `MENU-${menu_id}`,
-        price: harga,
-        quantity: qty,
-        name: menu.nama + (varian ? ` (${varian})` : '')
+        price: Number(harga),
+        quantity: Number(qty),
+        name: String(menu.nama + (varian ? ` (${varian})` : '')).substring(0, 50)
       });
     }
 
@@ -94,7 +94,7 @@ router.post('/', async (req, res) => {
         const midtransParams = {
           transaction_details: {
             order_id: `ORDER-${orderId}-${Date.now()}`,
-            gross_amount: totalHarga
+            gross_amount: Number(totalHarga)
           },
           item_details: itemDetails,
           customer_details: {
