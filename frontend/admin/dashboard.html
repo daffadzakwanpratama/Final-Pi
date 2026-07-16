@@ -159,7 +159,7 @@
     const username = localStorage.getItem('admin_username') || 'Admin';
     document.getElementById('greetingText').textContent = `Selamat datang, ${username}`;
     document.getElementById('adminAvatar').textContent = username.charAt(0).toUpperCase();
-    document.getElementById('dateText').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('dateText').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     async function loadDashboard() {
       try {
