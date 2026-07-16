@@ -78,7 +78,7 @@
       <div class="section-label" style="display:flex;justify-content:space-between;align-items:center;margin-top:0;">
         <span>Statistik Hari Ini</span>
         <button onclick="clearTodayOrders()" class="btn btn-sm" style="width:auto;font-size:0.72rem;padding:4px 8px;color:#dc2626;border:1px solid #fecaca;background:#fef2f2;display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:600;border-radius:6px;">
-          <i data-lucide="trash-2" style="width:12px;height:12px;"></i> Hapus Pesanan Hari Ini
+          <i data-lucide="trash-2" style="width:12px;height:12px;"></i> Hapus Semua Pesanan
         </button>
       </div>
       <div class="stats-grid">
@@ -213,7 +213,7 @@
     }
 
     async function clearTodayOrders() {
-      if (!confirm('Apakah Anda yakin ingin menghapus SEMUA pesanan hari ini? Tindakan ini tidak dapat dibatalkan.')) {
+      if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) {
         return;
       }
       try {

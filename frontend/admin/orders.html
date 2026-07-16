@@ -65,7 +65,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:var(--space-2);">
         <button onclick="clearTodayOrders()" class="btn btn-sm" style="width:auto;font-size:0.75rem;padding:6px 12px;color:#dc2626;border:1px solid #fecaca;background:#fef2f2;display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:600;">
-          <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Clear Hari Ini
+          <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Clear Semua
         </button>
         <button onclick="loadOrders()" class="btn btn-secondary btn-sm" style="width:auto;">
           <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
@@ -340,7 +340,7 @@
     }
 
     async function clearTodayOrders() {
-      if (!confirm('Apakah Anda yakin ingin menghapus SEMUA pesanan hari ini? Tindakan ini tidak dapat dibatalkan.')) {
+      if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) {
         return;
       }
       try {
