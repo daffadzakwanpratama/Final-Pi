@@ -291,8 +291,8 @@
               <div style="display:flex;align-items:center;">
                 ${markPaidBtn}
                 ${order.status !== 'Selesai' ? `
-                <button onclick="updateStatus(${order.id}, 'Selesai')" class="btn btn-ghost btn-sm" style="width:auto;font-size:0.75rem;color:var(--text-muted);">
-                  <i data-lucide="skip-forward" style="width:12px;height:12px;"></i> Selesaikan
+                <button onclick="updateStatus(${order.id}, 'Selesai')" class="btn btn-sm" style="width:auto;font-size:0.75rem;padding:4px 10px;background:var(--status-ready-bg);color:var(--status-ready-text);border:1px solid var(--status-ready-border);display:inline-flex;align-items:center;gap:4px;font-weight:600;cursor:pointer;">
+                  <i data-lucide="check" style="width:12px;height:12px;"></i> Selesaikan
                 </button>` : '<span style="font-size:0.78rem;color:var(--status-ready-text);">✓ Transaksi selesai</span>'}
               </div>
             </div>
