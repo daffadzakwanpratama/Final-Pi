@@ -84,30 +84,87 @@
       padding-left: 28px;
     }
 
-    .meja-input-wrap {
+    /* QR Scan Simulation UI */
+    .qr-container {
       display: flex;
-      gap: var(--space-3);
-      align-items: stretch;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2) 0;
     }
 
-    .meja-input-wrap .form-control {
-      flex: 1;
-      text-align: center;
-      font-size: 1.3rem;
-      font-weight: 700;
+    .qr-scanner-box {
+      width: 160px;
+      height: 160px;
+      border: 2px solid var(--border-strong);
       border-radius: var(--radius-lg);
+      position: relative;
+      background: var(--coffee-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: var(--space-5);
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    }
+
+    /* Laser Line Animation */
+    .qr-laser-line {
+      position: absolute;
+      width: 90%;
+      height: 3px;
+      background: #16a34a; /* Green laser line */
+      box-shadow: 0 0 8px #16a34a, 0 0 15px #22c55e;
+      animation: laserMove 2.5s infinite ease-in-out;
+      border-radius: var(--radius-full);
+      z-index: 2;
+    }
+
+    @keyframes laserMove {
+      0% { top: 10px; }
+      50% { top: 145px; }
+      100% { top: 10px; }
+    }
+
+    /* Corner brackets for QR scanner look */
+    .qr-corner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: var(--coffee-700);
+      border-style: solid;
+      pointer-events: none;
+    }
+    .qr-top-left { top: 8px; left: 8px; border-width: 3px 0 0 3px; border-top-left-radius: 4px; }
+    .qr-top-right { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-top-right-radius: 4px; }
+    .qr-bottom-left { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; border-bottom-left-radius: 4px; }
+    .qr-bottom-right { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px; }
+
+    .qr-icon-placeholder {
+      opacity: 0.15;
+      color: var(--coffee-900);
+      animation: qrPulse 2.5s infinite ease-in-out;
+    }
+
+    @keyframes qrPulse {
+      0% { transform: scale(1); opacity: 0.15; }
+      50% { transform: scale(1.05); opacity: 0.25; }
+      100% { transform: scale(1); opacity: 0.15; }
+    }
+
+    .qr-instruction-box {
+      background: var(--coffee-50);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-md);
       padding: var(--space-4);
-      border-width: 2px;
+      text-align: center;
+      width: 100%;
     }
 
-    .meja-input-wrap .form-control:focus {
-      border-color: var(--primary);
-    }
-
-    .btn-scan {
-      padding: var(--space-4) var(--space-5);
-      border-radius: var(--radius-lg);
-      font-size: 0.9rem;
+    .qr-instruction-text {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
 
     /* Footer */
@@ -132,25 +189,26 @@
     <!-- Card Scan QR -->
     <div class="scan-card">
       <div class="scan-card-title">
-        <i data-lucide="armchair" style="width:20px;height:20px;color:var(--coffee-500);"></i>
-        Nomor Meja
+        <i data-lucide="qr-code" style="width:20px;height:20px;color:var(--coffee-500);"></i>
+        Pindai QR Code
       </div>
-      <p class="scan-card-subtitle">Masukkan nomor meja Anda untuk mulai memesan</p>
+      <p class="scan-card-subtitle">Silakan scan QR Code pada meja Anda untuk memesan</p>
 
-      <div class="meja-input-wrap">
-        <input
-          type="number"
-          id="inputMeja"
-          class="form-control"
-          placeholder="1"
-          min="1"
-          max="99"
-          value="1"
-        >
-        <button id="btnScan" class="btn btn-primary btn-scan">
-          <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
-          Lihat Menu
-        </button>
+      <div class="qr-container">
+        <div class="qr-scanner-box">
+          <div class="qr-laser-line"></div>
+          <div class="qr-corner qr-top-left"></div>
+          <div class="qr-corner qr-top-right"></div>
+          <div class="qr-corner qr-bottom-left"></div>
+          <div class="qr-corner qr-bottom-right"></div>
+          <i data-lucide="qr-code" class="qr-icon-placeholder" style="width:90px;height:90px;"></i>
+        </div>
+
+        <div class="qr-instruction-box">
+          <p class="qr-instruction-text">
+            Membuka website secara otomatis dari QR Code meja akan mengaktifkan pemesanan untuk nomor meja Anda.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -163,20 +221,13 @@
     // Inisialisasi ikon Lucide
     lucide.createIcons();
 
-    // Logic simulasi scan QR meja
-    document.getElementById('btnScan').addEventListener('click', () => {
-      const noMeja = document.getElementById('inputMeja').value;
-      if (!noMeja || parseInt(noMeja) <= 0) {
-        alert('Silakan masukkan nomor meja yang valid.');
-        return;
-      }
-      window.location.href = `menu.html?meja=${noMeja}`;
-    });
-
-    // Tekan Enter untuk langsung buka menu
-    document.getElementById('inputMeja').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('btnScan').click();
-    });
+    // Deteksi parameter meja di URL (Simulasi Scan QR)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramMeja = urlParams.get('meja');
+    if (paramMeja && parseInt(paramMeja) > 0) {
+      localStorage.setItem('nomor_meja', paramMeja);
+      window.location.href = `menu.html?meja=${paramMeja}`;
+    }
   </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,17 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
-    body { background: var(--surface-cream); }
-    .page-content { padding: var(--space-5); padding-bottom: 100px; }
+    body {
+      background: var(--surface-cream);
+    }
+
+    .page-content {
+      padding: var(--space-5);
+      padding-bottom: 100px;
+    }
   </style>
 </head>
+
 <body class="page-wrapper">
 
   <!-- Navbar -->
@@ -38,10 +46,16 @@
       <div class="card-body">
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Nomor Meja Anda</label>
-          <input type="text" id="nomorMejaInput" class="form-control" placeholder="Contoh: 5" required>
-          <div class="form-hint">
+          <div style="position:relative; display:flex; align-items:center;">
+            <input type="text" id="nomorMejaInput" class="form-control"
+              style="background:var(--coffee-50); cursor:not-allowed; padding-left:40px; font-weight:600; color:var(--text-secondary);"
+              required readonly>
+            <i data-lucide="lock"
+              style="width:16px; height:16px; position:absolute; left:14px; color:var(--text-muted);"></i>
+          </div>
+          <div class="form-hint" style="color:var(--status-waiting-text); margin-top:6px;">
             <i data-lucide="info" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
-            Pastikan nomor meja sesuai dengan meja tempat Anda duduk.
+            Nomor meja terdeteksi otomatis dari QR Code meja Anda dan tidak dapat diubah.
           </div>
         </div>
       </div>
@@ -67,10 +81,13 @@
     </div>
 
     <!-- Info Pembayaran -->
-    <div style="margin-top:var(--space-4);padding:var(--space-4);background:var(--status-process-bg);border:1px solid var(--status-process-border);border-radius:var(--radius-lg);display:flex;gap:var(--space-3);align-items:flex-start;">
-      <i data-lucide="info" style="width:18px;height:18px;color:var(--status-process-text);flex-shrink:0;margin-top:2px;"></i>
+    <div
+      style="margin-top:var(--space-4);padding:var(--space-4);background:var(--status-process-bg);border:1px solid var(--status-process-border);border-radius:var(--radius-lg);display:flex;gap:var(--space-3);align-items:flex-start;">
+      <i data-lucide="info"
+        style="width:18px;height:18px;color:var(--status-process-text);flex-shrink:0;margin-top:2px;"></i>
       <div style="font-size:0.82rem;color:var(--status-process-text);line-height:1.5;">
-        <strong>Pembayaran di Kasir.</strong> Pesanan Anda akan segera diproses setelah tombol di bawah diklik. Silakan lakukan pembayaran kepada kasir setelah pesanan siap.
+        <strong>Pembayaran di Kasir.</strong> Pesanan Anda akan segera diproses setelah tombol di bawah diklik. Silakan
+        lakukan pembayaran kepada kasir setelah pesanan siap.
       </div>
     </div>
 
@@ -91,6 +108,13 @@
     function initCheckout() {
       cart = JSON.parse(localStorage.getItem('cart')) || [];
       const noMeja = localStorage.getItem('nomor_meja') || '';
+
+      if (!noMeja) {
+        alert('Nomor meja tidak terdeteksi. Silakan pilih meja terlebih dahulu.');
+        window.location.href = 'index.html';
+        return;
+      }
+
       document.getElementById('nomorMejaInput').value = noMeja;
 
       if (cart.length === 0) {
@@ -157,4 +181,5 @@
     initCheckout();
   </script>
 </body>
+
 </html>
