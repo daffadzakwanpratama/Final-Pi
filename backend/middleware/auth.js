@@ -1,4 +1,5 @@
 // Middleware untuk memvalidasi JWT token admin
+// memasukan token ke dalam header Authorization dengan format: Bearer <TOKEN>
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
