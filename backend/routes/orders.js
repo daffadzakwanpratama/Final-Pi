@@ -8,8 +8,8 @@ const midtransClient = require('midtrans-client');
 // Inisialisasi Midtrans Snap Client
 const snapClient = new midtransClient.Snap({
   isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
-  serverKey: (process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-VpD3Xg1J8v8jWwN29Q3pS_yC').trim(),
-  clientKey: (process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-N_YwW9sE40Y1pD7-').trim()
+  serverKey: (process.env.MIDTRANS_SERVER_KEY || '').trim(),
+  clientKey: (process.env.MIDTRANS_CLIENT_KEY || '').trim()
 });
 
 // 1. POST /api/orders
