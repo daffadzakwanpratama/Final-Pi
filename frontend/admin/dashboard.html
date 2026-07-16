@@ -179,19 +179,16 @@
         });
         if (res.status === 401) { logout(); return; }
         const data = await res.json();
+        
+        // Update stats
         document.getElementById('statMenu').textContent     = data.jumlah_menu ?? '—';
         document.getElementById('statHariIni').textContent  = data.pesanan_hari_ini ?? '—';
         document.getElementById('statMenunggu').textContent = data.pesanan_menunggu ?? '—';
         document.getElementById('statDiproses').textContent = data.pesanan_diproses ?? '—';
-      } catch {}
 
-      try {
-        const res = await fetch('/api/orders', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const allOrders = await res.json();
-        const orders = allOrders.slice(0, 5);
+        // Render recent orders
         const container = document.getElementById('recentOrdersContainer');
+        const orders = data.pesanan_terbaru || [];
 
         if (!orders.length) {
           container.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--text-muted);"><i data-lucide="inbox" style="width:32px;height:32px;margin:0 auto var(--space-3) auto;display:block;"></i>Belum ada pesanan.</div>`;
@@ -202,7 +199,7 @@
         container.innerHTML = orders.map(o => `
           <div class="recent-order-row">
             <div>
-              <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Meja ${o.nomor_meja}</div>
+              <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">${o.nama_pelanggan || 'Pelanggan'}</div>
               <div style="font-size:0.78rem;color:var(--text-muted);">
                 ${new Date(o.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                 &bull; Meja ${o.nomor_meja}
@@ -212,7 +209,9 @@
           </div>
         `).join('');
         lucide.createIcons();
-      } catch {}
+      } catch (err) {
+        console.error("Gagal memuat dashboard:", err);
+      }
     }
 
     function logout() {

@@ -191,7 +191,7 @@ router.get('/dashboard-summary', verifikasiToken, async (req, res) => {
     
     // e. Daftar Pesanan Terbaru (5 terakhir)
     const recentOrders = await db.query(`
-      SELECT id, nomor_meja, tanggal, status 
+      SELECT id, nomor_meja, nama_pelanggan, tanggal, status 
       FROM orders 
       ORDER BY tanggal DESC 
       LIMIT 5
