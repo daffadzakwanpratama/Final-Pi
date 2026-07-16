@@ -268,10 +268,26 @@
         if (metodePembayaran === 'nontunai' && data.snap_token) {
           snap.pay(data.snap_token, {
             onSuccess: function(result) {
-              window.location.href = `status.html?id=${data.order_id}`;
+              fetch(`/api/orders/${data.order_id}/update-payment-client`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status_pembayaran: 'Sudah Bayar' })
+              }).then(() => {
+                window.location.href = `status.html?id=${data.order_id}`;
+              }).catch(() => {
+                window.location.href = `status.html?id=${data.order_id}`;
+              });
             },
             onPending: function(result) {
-              window.location.href = `status.html?id=${data.order_id}`;
+              fetch(`/api/orders/${data.order_id}/update-payment-client`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status_pembayaran: 'Belum Bayar' })
+              }).then(() => {
+                window.location.href = `status.html?id=${data.order_id}`;
+              }).catch(() => {
+                window.location.href = `status.html?id=${data.order_id}`;
+              });
             },
             onError: function(result) {
               alert('Pembayaran online gagal. Silakan bayar secara tunai ke kasir.');

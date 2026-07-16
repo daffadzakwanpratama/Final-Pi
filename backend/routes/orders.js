@@ -334,4 +334,25 @@ router.post('/:id/mark-paid', verifikasiToken, async (req, res) => {
   }
 });
 
+// 8. POST /api/orders/:id/update-payment-client
+// Deskripsi: Memperbarui status pembayaran dari client-side callback (sangat berguna untuk localhost/offline testing)
+router.post('/:id/update-payment-client', async (req, res) => {
+  const { id } = req.params;
+  const { status_pembayaran } = req.body;
+  try {
+    const orderCheck = await db.query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (orderCheck.rows.length === 0) {
+      return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
+    }
+    
+    const paymentStatus = status_pembayaran || 'Sudah Bayar';
+    await db.query("UPDATE orders SET status_pembayaran = $1 WHERE id = $2", [paymentStatus, id]);
+    
+    res.json({ pesan: 'Status pembayaran berhasil diperbarui dari client.', status_pembayaran: paymentStatus });
+  } catch (error) {
+    console.error('Error POST /api/orders/:id/update-payment-client:', error);
+    res.status(500).json({ pesan: 'Gagal memperbarui status pembayaran dari client.' });
+  }
+});
+
 module.exports = router;

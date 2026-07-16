@@ -199,8 +199,28 @@
             document.getElementById('btnBayarUlangContainer').style.display = 'block';
             document.getElementById('btnBayarUlang').onclick = function() {
               snap.pay(order.midtrans_token, {
-                onSuccess: function(result) { dapatkanStatus(); },
-                onPending: function(result) { dapatkanStatus(); },
+                onSuccess: function(result) {
+                  fetch(`/api/orders/${order.id}/update-payment-client`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status_pembayaran: 'Sudah Bayar' })
+                  }).then(() => {
+                    dapatkanStatus();
+                  }).catch(() => {
+                    dapatkanStatus();
+                  });
+                },
+                onPending: function(result) {
+                  fetch(`/api/orders/${order.id}/update-payment-client`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status_pembayaran: 'Belum Bayar' })
+                  }).then(() => {
+                    dapatkanStatus();
+                  }).catch(() => {
+                    dapatkanStatus();
+                  });
+                },
                 onError: function(result) { dapatkanStatus(); },
                 onClose: function() { dapatkanStatus(); }
               });
