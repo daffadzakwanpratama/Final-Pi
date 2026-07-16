@@ -15,7 +15,7 @@ const snapClient = new midtransClient.Snap({
 // 1. POST /api/orders
 // Deskripsi: Membuat pesanan baru (Checkout dari Pelanggan)
 router.post('/', async (req, res) => {
-  const { nomor_meja, items, metode_pembayaran } = req.body; // items: [{ menu_id, qty, varian }], metode_pembayaran: 'tunai'/'nontunai'
+  const { nomor_meja, items, metode_pembayaran, nama_pelanggan } = req.body; // items: [{ menu_id, qty, varian }], metode_pembayaran: 'tunai'/'nontunai'
 
   if (!nomor_meja || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ pesan: 'Nomor meja dan item pesanan tidak boleh kosong.' });
@@ -32,11 +32,11 @@ router.post('/', async (req, res) => {
 
     // 1. Simpan data ke tabel orders
     const insertOrderQuery = `
-      INSERT INTO orders (nomor_meja, status, metode_pembayaran, status_pembayaran) 
-      VALUES ($1, 'Menunggu', $2, 'Belum Bayar') 
+      INSERT INTO orders (nomor_meja, status, metode_pembayaran, status_pembayaran, nama_pelanggan) 
+      VALUES ($1, 'Menunggu', $2, 'Belum Bayar', $3) 
       RETURNING *
     `;
-    const orderRes = await client.query(insertOrderQuery, [nomor_meja, paymentMethod]);
+    const orderRes = await client.query(insertOrderQuery, [nomor_meja, paymentMethod, nama_pelanggan || 'Pelanggan']);
     const orderId = orderRes.rows[0].id;
 
     let totalHarga = 0;
@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
           },
           item_details: itemDetails,
           customer_details: {
-            first_name: `Pelanggan Meja ${nomor_meja}`
+            first_name: nama_pelanggan || `Pelanggan Meja ${nomor_meja}`
           }
         };
 
@@ -148,7 +148,7 @@ router.post('/', async (req, res) => {
 router.get('/:id/status', async (req, res) => {
   const { id } = req.params;
   try {
-    const orderRes = await db.query('SELECT id, nomor_meja, tanggal, status, metode_pembayaran, status_pembayaran, midtrans_token FROM orders WHERE id = $1', [id]);
+    const orderRes = await db.query('SELECT id, nomor_meja, nama_pelanggan, tanggal, status, metode_pembayaran, status_pembayaran, midtrans_token FROM orders WHERE id = $1', [id]);
     if (orderRes.rows.length === 0) {
       return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
     }

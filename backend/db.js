@@ -43,6 +43,7 @@ async function inisialisasiDatabase() {
     await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS metode_pembayaran VARCHAR(20) DEFAULT 'tunai'");
     await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_pembayaran VARCHAR(20) DEFAULT 'Belum Bayar'");
     await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS midtrans_token VARCHAR(100)");
+    await pool.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS nama_pelanggan VARCHAR(100) DEFAULT 'Pelanggan'");
     
     // Pembuatan tabel kategori dinamis
     await pool.query(`

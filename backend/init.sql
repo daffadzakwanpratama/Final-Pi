@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS menu (
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     nomor_meja VARCHAR(10) NOT NULL,
+    nama_pelanggan VARCHAR(100) DEFAULT 'Pelanggan',
     tanggal TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) DEFAULT 'Menunggu', -- 'Menunggu', 'Diproses', 'Siap', 'Selesai'
     metode_pembayaran VARCHAR(20) DEFAULT 'tunai', -- 'tunai' atau 'nontunai'

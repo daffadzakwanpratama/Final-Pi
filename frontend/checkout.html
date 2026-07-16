@@ -84,8 +84,25 @@
 
   <main class="page-content container">
 
-    <!-- Informasi Meja -->
+    <!-- Informasi Pemesan -->
     <div class="card mt-5">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="user" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Informasi Pemesan
+      </div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Nama Pemesan</label>
+          <div style="position:relative; display:flex; align-items:center;">
+            <input type="text" id="namaPemesanInput" class="form-control" placeholder="Masukkan nama Anda (misal: Budi)" style="padding-left:40px; font-weight:500;" required>
+            <i data-lucide="user" style="width:16px; height:16px; position:absolute; left:14px; color:var(--text-muted);"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informasi Meja -->
+    <div class="card mt-4">
       <div class="card-header" style="display:flex;align-items:center;gap:8px;">
         <i data-lucide="armchair" style="width:16px;height:16px;color:var(--coffee-500);"></i>
         Informasi Meja
@@ -241,10 +258,14 @@
 
     async function prosesCheckout() {
       const meja = document.getElementById('nomorMejaInput').value.trim();
+      const nama = document.getElementById('namaPemesanInput').value.trim();
+      
+      if (!nama) { alert('Silakan masukkan nama pemesan.'); return; }
       if (!meja) { alert('Nomor meja harus diisi.'); return; }
 
       const payload = {
         nomor_meja: meja,
+        nama_pelanggan: nama,
         items: cart.map(c => ({ menu_id: c.id, qty: c.qty, varian: c.varian })),
         metode_pembayaran: metodePembayaran
       };

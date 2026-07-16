@@ -275,7 +275,7 @@
                   <span class="badge ${cfg.badgeClass}">${order.status}</span>
                 </div>
                 <div class="order-card-meta" style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.4;">
-                  <span>Meja ${order.nomor_meja} &bull; ${tgl}, ${waktu}</span>
+                  <span><strong>${order.nama_pelanggan || 'Pelanggan'}</strong> &bull; Meja ${order.nomor_meja} &bull; ${tgl}, ${waktu}</span>
                   <span style="font-weight:600;color:var(--text-muted);font-size:0.75rem;">${paymentMethodText}</span>
                   <span class="badge ${paymentBadgeClass}" style="font-size:0.68rem;padding:2px 8px;text-transform:none;">${paymentStatusText}</span>
                 </div>

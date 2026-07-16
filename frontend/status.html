@@ -173,7 +173,7 @@
 
       // Waktu & Meja
       const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('waktuText').textContent = `Dipesan pukul ${waktu} WIB`;
+      document.getElementById('waktuText').textContent = `${order.nama_pelanggan || 'Pelanggan'} • Meja ${order.nomor_meja} • Pukul ${waktu} WIB`;
       document.getElementById('mejaBadge').textContent = `Meja ${order.nomor_meja}`;
 
       // Pembayaran
