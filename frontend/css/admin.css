@@ -250,12 +250,56 @@
 /* ============================================
    RESPONSIVE (ADMIN SIDE)
    ============================================ */
+
+/* ===== MOBILE (max 768px) ===== */
 @media (max-width: 768px) {
+  /* Sembunyikan sidebar; tampilkan bottom nav */
   .admin-sidebar { display: none; }
   .admin-content { min-height: 100dvh; }
-  .admin-topbar { padding: var(--space-4) var(--space-5); }
-  .admin-page { padding: var(--space-5); }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Topbar lebih kompak di mobile */
+  .admin-topbar {
+    padding: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .admin-topbar-title { font-size: 1rem; }
+
+  /* Page padding lebih kecil */
+  .admin-page { padding: var(--space-4); }
+
+  /* Stat grid: 2 kolom di mobile */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+
+  /* Stat card lebih kompak */
+  .stat-card { padding: var(--space-4); gap: var(--space-3); }
+  .stat-icon { width: 36px; height: 36px; }
+  .stat-value { font-size: 1.6rem; }
+  .stat-label { font-size: 0.7rem; }
+
+  /* Orders grid: 1 kolom di mobile */
+  .orders-grid { grid-template-columns: 1fr; }
+
+  /* Tabel: scrollable horizontal di mobile */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { min-width: 600px; }
+
+  /* Filter tabs: scrollable di mobile */
+  .filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-2);
+  }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab { flex-shrink: 0; }
+
+  /* Modal admin: full width di mobile */
+  .admin-modal-overlay { padding: var(--space-3); }
+  .admin-modal-box { max-width: 100%; border-radius: var(--radius-lg); }
+
+  /* Bottom nav: tampil di mobile */
   .admin-mobile-nav {
     position: fixed;
     bottom: 0;
@@ -265,6 +309,8 @@
     display: flex;
     z-index: 100;
     border-top: 1px solid rgba(255,255,255,0.1);
+    /* Aman dari home indicator iOS */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .admin-mobile-nav-item {
     flex: 1;
@@ -285,11 +331,56 @@
   }
   .admin-mobile-nav-item.active { color: white; }
   .admin-page-with-bottom { padding-bottom: 80px; }
+
+  /* Recent orders: tumpuk di mobile */
+  .recent-order-row { flex-wrap: wrap; gap: var(--space-2); }
 }
 
-@media (min-width: 769px) {
+/* ===== TABLET (769px - 1023px) ===== */
+@media (min-width: 769px) and (max-width: 1023px) {
+  /* Sembunyikan bottom nav, tampilkan sidebar */
   .admin-mobile-nav { display: none; }
+
+  /* Sidebar sedikit lebih sempit */
+  .admin-sidebar { width: 200px; }
+
+  /* Topbar padding lebih sedang */
+  .admin-topbar { padding: var(--space-4) var(--space-5); }
+  .admin-page { padding: var(--space-5); }
+
+  /* Stat grid: 2 kolom di tablet */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Orders grid: 2 kolom di tablet */
+  .orders-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Tabel: sedikit lebih kecil fontnya */
+  .table { font-size: 0.82rem; }
+  .table th, .table td { padding: var(--space-3); }
 }
+
+/* ===== DESKTOP (>= 1024px) ===== */
+@media (min-width: 1024px) {
+  /* Sembunyikan bottom nav */
+  .admin-mobile-nav { display: none; }
+
+  /* Sidebar penuh */
+  .admin-sidebar { width: 250px; }
+
+  /* Stat grid: 4 kolom di desktop besar */
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* Orders grid: 2-3 kolom di desktop */
+  .orders-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+}
+
+/* ===== LARGE DESKTOP (>= 1440px) ===== */
+@media (min-width: 1440px) {
+  .admin-topbar { padding: var(--space-4) var(--space-10); }
+  .admin-page { padding: var(--space-8) var(--space-10); }
+  .orders-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+}
+
 
 /* ============================================
    ADMIN: SPESIFIK LOGOUT / LOGIN CARD

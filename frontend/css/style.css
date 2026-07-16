@@ -1006,32 +1006,57 @@ textarea {
    RESPONSIVE LAYOUT (MEDIA QUERIES)
    ============================================ */
 
-/* 1. Tablet View (600px - 899px) */
+/* ===== MOBILE FIRST (Default) — max 599px ===== */
+/* Sudah di-handle oleh default styles di atas */
+
+/* ===== TABLET (600px - 899px) ===== */
 @media (min-width: 600px) and (max-width: 899px) {
+  /* Container & Navbar */
+  .container,
   .navbar-inner,
-  .category-scroll,
-  .content {
+  .category-scroll {
     max-width: 700px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    padding-left: var(--space-6) !important;
+    padding-right: var(--space-6) !important;
   }
 
+  /* Menu grid: 3 kolom di tablet */
   .menu-list {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: var(--space-4) !important;
   }
-}
 
-/* 2. Desktop View (>= 900px) */
-@media (min-width: 900px) {
-  .navbar-inner,
-  .category-scroll,
-  .content {
-    max-width: 1000px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+  /* Landing page: sedikit lebih besar */
+  .landing-wrapper {
+    max-width: 480px;
+    margin: 0 auto;
   }
 
+  /* Modal lebih lebar di tablet */
+  .modal-box {
+    max-width: 480px;
+  }
+
+  /* Cart & Checkout lebih nyaman */
+  .page-content,
+  .cart-body {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+/* ===== DESKTOP (>= 900px) ===== */
+@media (min-width: 900px) {
+  /* Container & Navbar melebar */
+  .container,
+  .navbar-inner,
+  .category-scroll {
+    max-width: 1100px !important;
+    padding-left: var(--space-8) !important;
+    padding-right: var(--space-8) !important;
+  }
+
+  /* Menu grid: 4-5 kolom di desktop */
   .menu-list {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: var(--space-5) !important;
@@ -1040,5 +1065,73 @@ textarea {
 
   .menu-card-img {
     height: 150px !important;
+  }
+
+  /* Landing page: centered card */
+  .landing-wrapper {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* Modal sedikit lebih besar di desktop */
+  .modal-box {
+    max-width: 440px;
+  }
+
+  /* Cart & Checkout: constrained di tengah */
+  .page-content,
+  .cart-body {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* Status page: constrained */
+  .page-wrapper > main {
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* ===== LARGE DESKTOP (>= 1280px) ===== */
+@media (min-width: 1280px) {
+  .container,
+  .navbar-inner,
+  .category-scroll {
+    max-width: 1280px !important;
+  }
+
+  .menu-list {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+
+/* ===== EXTRA SMALL MOBILE (< 380px) ===== */
+@media (max-width: 379px) {
+  body {
+    font-size: 14px;
+  }
+
+  .navbar-inner {
+    padding: var(--space-3) var(--space-4) !important;
+  }
+
+  .menu-list {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-2) !important;
+  }
+
+  .menu-card-img {
+    height: 100px !important;
+  }
+
+  .btn {
+    font-size: 0.82rem;
+    padding: 10px var(--space-4);
+  }
+
+  .cart-item-img {
+    width: 52px;
+    height: 52px;
   }
 }
