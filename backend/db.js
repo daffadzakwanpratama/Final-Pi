@@ -39,6 +39,7 @@ async function inisialisasiDatabase() {
     await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS harga_hot INT');
     await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS harga_ice INT');
     await pool.query('ALTER TABLE order_items ADD COLUMN IF NOT EXISTS varian VARCHAR(20)');
+    await pool.query('ALTER TABLE menu ADD COLUMN IF NOT EXISTS is_favorit BOOLEAN DEFAULT FALSE');
     
     // Pembuatan tabel kategori dinamis
     await pool.query(`

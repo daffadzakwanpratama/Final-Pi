@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
 // 3. POST /api/menu
 // Deskripsi: Menambahkan menu baru (Akses Admin)
 router.post('/', verifikasiToken, async (req, res) => {
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice } = req.body;
+  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit } = req.body;
 
   if (!nama || !kategori || (!is_hot_ice && !harga)) {
     return res.status(400).json({ pesan: 'Nama, kategori, dan harga wajib diisi.' });
@@ -46,7 +46,7 @@ router.post('/', verifikasiToken, async (req, res) => {
 
   try {
     const baseHarga = is_hot_ice ? Math.min(parseInt(harga_hot || 0), parseInt(harga_ice || 0)) : parseInt(harga);
-    const queryStr = 'INSERT INTO menu (nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+    const queryStr = 'INSERT INTO menu (nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *';
     const values = [
       nama, 
       baseHarga, 
@@ -55,7 +55,8 @@ router.post('/', verifikasiToken, async (req, res) => {
       deskripsi || '', 
       !!is_hot_ice, 
       is_hot_ice ? parseInt(harga_hot || 0) : null,
-      is_hot_ice ? parseInt(harga_ice || 0) : null
+      is_hot_ice ? parseInt(harga_ice || 0) : null,
+      !!is_favorit
     ];
     
     const resInsert = await db.query(queryStr, values);
@@ -73,7 +74,7 @@ router.post('/', verifikasiToken, async (req, res) => {
 // Deskripsi: Mengubah data menu berdasarkan ID (Akses Admin)
 router.put('/:id', verifikasiToken, async (req, res) => {
   const { id } = req.params;
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice } = req.body;
+  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit } = req.body;
 
   if (!nama || !kategori || (!is_hot_ice && !harga)) {
     return res.status(400).json({ pesan: 'Nama, kategori, dan harga wajib diisi.' });
@@ -90,7 +91,7 @@ router.put('/:id', verifikasiToken, async (req, res) => {
     }
 
     const baseHarga = is_hot_ice ? Math.min(parseInt(harga_hot || 0), parseInt(harga_ice || 0)) : parseInt(harga);
-    const queryStr = 'UPDATE menu SET nama = $1, harga = $2, gambar = $3, kategori = $4, deskripsi = $5, is_hot_ice = $6, harga_hot = $7, harga_ice = $8 WHERE id = $9 RETURNING *';
+    const queryStr = 'UPDATE menu SET nama = $1, harga = $2, gambar = $3, kategori = $4, deskripsi = $5, is_hot_ice = $6, harga_hot = $7, harga_ice = $8, is_favorit = $9 WHERE id = $10 RETURNING *';
     const values = [
       nama, 
       baseHarga, 
@@ -100,6 +101,7 @@ router.put('/:id', verifikasiToken, async (req, res) => {
       !!is_hot_ice, 
       is_hot_ice ? parseInt(harga_hot || 0) : null,
       is_hot_ice ? parseInt(harga_ice || 0) : null,
+      !!is_favorit,
       id
     ];
 

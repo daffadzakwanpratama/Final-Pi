@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS menu (
     deskripsi TEXT,
     is_hot_ice BOOLEAN DEFAULT FALSE,
     harga_hot INT,
-    harga_ice INT
+    harga_ice INT,
+    is_favorit BOOLEAN DEFAULT FALSE
 );
 
 -- 4. Tabel Orders

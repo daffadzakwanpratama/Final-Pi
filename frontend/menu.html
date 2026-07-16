@@ -218,8 +218,10 @@
       }
     }
 
-    // Helper function to get menu tags dynamically based on product name
-    function getMenuTag(name) {
+    // Helper function to get menu tags dynamically based on product item
+    function getMenuTag(m) {
+      if (m.is_favorit) return 'Favorit';
+      const name = m.nama;
       const n = name.toLowerCase();
       if (n.includes('uncle joe') || n.includes('signature')) return 'Signature';
       if (n.includes('spesial') || n.includes('bestseller') || n.includes('nasi goreng')) return 'Bestseller';
@@ -230,7 +232,7 @@
 
     // Helper function to render a menu card
     function renderMenuCard(m) {
-      const tag = getMenuTag(m.nama);
+      const tag = getMenuTag(m);
       const tagHtml = tag ? `<span class="menu-card-tag">${tag}</span>` : '';
       const priceVal = m.is_hot_ice ? Math.min(m.harga_hot || 0, m.harga_ice || 0) : m.harga;
       return `
