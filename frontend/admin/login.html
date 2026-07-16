@@ -9,15 +9,19 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     /* Styling khusus override untuk mencocokkan mockup premium */
+    html {
+      height: auto !important;
+    }
     body.admin-login-body {
-      background: radial-gradient(circle at top, #4e3421 0%, #170d06 100%);
+      background: radial-gradient(circle at top, #4e3421 0%, #170d06 100%) !important;
       font-family: 'Poppins', sans-serif;
-      min-height: 100dvh;
+      height: auto !important;
+      min-height: 100dvh !important;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: var(--space-6) var(--space-5);
+      padding: var(--space-6) var(--space-5) 80px var(--space-5) !important;
       color: #ffffff;
       overflow-y: auto;
     }
@@ -30,23 +34,23 @@
     }
 
     .logo-frame {
-      width: 104px;
-      height: 104px;
-      border-radius: 28px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      width: 90px;
+      height: 90px;
+      border-radius: 22px;
+      background: #000000;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: var(--space-4);
-      padding: var(--space-2);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
     .logo-frame img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
     }
 
     .brand-title {
