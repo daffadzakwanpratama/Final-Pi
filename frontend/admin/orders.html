@@ -251,15 +251,34 @@
             ${cfg.nextLabel}
           </button>` : '';
 
+        const paymentMethodText = order.metode_pembayaran === 'nontunai' ? '💳 Non-Tunai' : '💵 Tunai';
+        const paymentStatusText = order.status_pembayaran || 'Belum Bayar';
+        
+        let paymentBadgeClass = 'badge-menunggu';
+        if (order.status_pembayaran === 'Sudah Bayar') {
+          paymentBadgeClass = 'badge-selesai';
+        } else if (order.status_pembayaran === 'Gagal') {
+          paymentBadgeClass = 'badge-diproses'; // will highlight or show red
+        }
+
+        const markPaidBtn = (order.metode_pembayaran === 'tunai' && order.status_pembayaran === 'Belum Bayar') ? `
+          <button onclick="markOrderPaid(${order.id})" class="btn btn-secondary btn-sm" style="width:auto;font-size:0.75rem;padding:4px 10px;margin-right:8px;background:#fdf2e9;color:#b06222;border-color:#f5c299;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="check" style="width:12px;height:12px;"></i> Lunas
+          </button>` : '';
+
         return `
           <div class="order-card" style="border-color:${cfg.cardBorder};">
             <div class="order-card-header">
               <div>
-                <div style="display:flex;align-items:center;gap:var(--space-3);">
+                <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
                   <div class="order-queue-num">#${String(order.id).padStart(3,'0')}</div>
                   <span class="badge ${cfg.badgeClass}">${order.status}</span>
                 </div>
-                <div class="order-card-meta">Meja ${order.nomor_meja} &bull; ${tgl}, ${waktu}</div>
+                <div class="order-card-meta" style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.4;">
+                  <span>Meja ${order.nomor_meja} &bull; ${tgl}, ${waktu}</span>
+                  <span style="font-weight:600;color:var(--text-muted);font-size:0.75rem;">${paymentMethodText}</span>
+                  <span class="badge ${paymentBadgeClass}" style="font-size:0.68rem;padding:2px 8px;text-transform:none;">${paymentStatusText}</span>
+                </div>
               </div>
               ${actionBtn}
             </div>
@@ -269,10 +288,13 @@
                 <div class="order-total-label">Total Tagihan</div>
                 <div class="order-total-value">Rp ${totalHarga.toLocaleString('id-ID')}</div>
               </div>
-              ${order.status !== 'Selesai' ? `
-              <button onclick="updateStatus(${order.id}, 'Selesai')" class="btn btn-ghost btn-sm" style="width:auto;font-size:0.75rem;color:var(--text-muted);">
-                <i data-lucide="skip-forward" style="width:12px;height:12px;"></i> Selesaikan
-              </button>` : '<span style="font-size:0.78rem;color:var(--status-ready-text);">✓ Transaksi selesai</span>'}
+              <div style="display:flex;align-items:center;">
+                ${markPaidBtn}
+                ${order.status !== 'Selesai' ? `
+                <button onclick="updateStatus(${order.id}, 'Selesai')" class="btn btn-ghost btn-sm" style="width:auto;font-size:0.75rem;color:var(--text-muted);">
+                  <i data-lucide="skip-forward" style="width:12px;height:12px;"></i> Selesaikan
+                </button>` : '<span style="font-size:0.78rem;color:var(--status-ready-text);">✓ Transaksi selesai</span>'}
+              </div>
             </div>
           </div>`;
       }).join('');
@@ -290,6 +312,20 @@
         loadOrders(); // Refresh setelah update
       } catch {
         alert('Gagal mengubah status pesanan. Coba lagi.');
+      }
+    }
+
+    async function markOrderPaid(orderId) {
+      if (!confirm('Tandai pesanan ini sebagai Lunas / Sudah Bayar?')) return;
+      try {
+        const res = await fetch(`/api/orders/${orderId}/mark-paid`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        loadOrders(); // Refresh setelah update
+      } catch {
+        alert('Gagal menandai lunas. Coba lagi.');
       }
     }
 

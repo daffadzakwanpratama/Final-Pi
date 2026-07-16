@@ -3,15 +3,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const verifikasiToken = require('../middleware/auth');
+const midtransClient = require('midtrans-client');
+
+// Inisialisasi Midtrans Snap Client
+const snapClient = new midtransClient.Snap({
+  isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
+  serverKey: process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-VpD3Xg1J8v8jWwN29Q3pS_yC',
+  clientKey: process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-N_YwW9sE40Y1pD7-'
+});
 
 // 1. POST /api/orders
 // Deskripsi: Membuat pesanan baru (Checkout dari Pelanggan)
 router.post('/', async (req, res) => {
-  const { nomor_meja, items } = req.body; // items: [{ menu_id, qty }]
+  const { nomor_meja, items, metode_pembayaran } = req.body; // items: [{ menu_id, qty, varian }], metode_pembayaran: 'tunai'/'nontunai'
 
   if (!nomor_meja || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ pesan: 'Nomor meja dan item pesanan tidak boleh kosong.' });
   }
+
+  const paymentMethod = metode_pembayaran === 'nontunai' ? 'nontunai' : 'tunai';
 
   // Koneksi client dari pool untuk transaksi database
   const client = await db.pool.connect();
@@ -22,12 +32,15 @@ router.post('/', async (req, res) => {
 
     // 1. Simpan data ke tabel orders
     const insertOrderQuery = `
-      INSERT INTO orders (nomor_meja, status) 
-      VALUES ($1, 'Menunggu') 
+      INSERT INTO orders (nomor_meja, status, metode_pembayaran, status_pembayaran) 
+      VALUES ($1, 'Menunggu', $2, 'Belum Bayar') 
       RETURNING *
     `;
-    const orderRes = await client.query(insertOrderQuery, [nomor_meja]);
+    const orderRes = await client.query(insertOrderQuery, [nomor_meja, paymentMethod]);
     const orderId = orderRes.rows[0].id;
+
+    let totalHarga = 0;
+    const itemDetails = [];
 
     // 2. Simpan setiap item ke tabel order_items
     for (const item of items) {
@@ -38,7 +51,7 @@ router.post('/', async (req, res) => {
       }
 
       // Ambil harga menu dari database (termasuk harga varian) untuk menghitung subtotal
-      const menuRes = await client.query('SELECT harga, is_hot_ice, harga_hot, harga_ice FROM menu WHERE id = $1', [menu_id]);
+      const menuRes = await client.query('SELECT nama, harga, is_hot_ice, harga_hot, harga_ice FROM menu WHERE id = $1', [menu_id]);
       if (menuRes.rows.length === 0) {
         throw new Error(`Menu dengan ID ${menu_id} tidak ditemukan.`);
       }
@@ -56,19 +69,66 @@ router.post('/', async (req, res) => {
       }
 
       const subtotal = harga * qty;
+      totalHarga += subtotal;
 
       const insertItemQuery = `
         INSERT INTO order_items (order_id, menu_id, qty, subtotal, varian) 
         VALUES ($1, $2, $3, $4, $5)
       `;
       await client.query(insertItemQuery, [orderId, menu_id, qty, subtotal, varian || null]);
+
+      itemDetails.push({
+        id: `MENU-${menu_id}`,
+        price: harga,
+        quantity: qty,
+        name: menu.nama + (varian ? ` (${varian})` : '')
+      });
     }
 
     // Melakukan Commit jika semua operasi berhasil
     await client.query('COMMIT');
 
-    res.status(201).json({
-      pesan: 'Pesanan berhasil dibuat.',
+    // Integrasi Midtrans jika non-tunai
+    if (paymentMethod === 'nontunai') {
+      try {
+        const midtransParams = {
+          transaction_details: {
+            order_id: `ORDER-${orderId}-${Date.now()}`,
+            gross_amount: totalHarga
+          },
+          item_details: itemDetails,
+          customer_details: {
+            first_name: `Pelanggan Meja ${nomor_meja}`
+          }
+        };
+
+        const transaction = await snapClient.createTransaction(midtransParams);
+        const snapToken = transaction.token;
+        const redirectUrl = transaction.redirect_url;
+
+        // Simpan token ke database orders
+        await db.query('UPDATE orders SET midtrans_token = $1 WHERE id = $2', [snapToken, orderId]);
+
+        return res.status(201).json({
+          pesan: 'Pesanan berhasil dibuat. Silakan selesaikan pembayaran.',
+          order_id: orderId,
+          snap_token: snapToken,
+          redirect_url: redirectUrl
+        });
+      } catch (midtransErr) {
+        console.error('Error Midtrans Snap API:', midtransErr);
+        // Fallback jika Midtrans error, tetap kembalikan order_id agar pesanan tidak hilang (bisa bayar cash/tunai)
+        return res.status(201).json({
+          pesan: 'Pesanan dibuat, tetapi gagal memproses pembayaran online. Silakan bayar secara tunai di kasir.',
+          order_id: orderId,
+          fallback_to_cash: true
+        });
+      }
+    }
+
+    // Jika tunai
+    return res.status(201).json({
+      pesan: 'Pesanan berhasil dibuat. Silakan bayar di kasir.',
       order_id: orderId
     });
 
@@ -88,7 +148,7 @@ router.post('/', async (req, res) => {
 router.get('/:id/status', async (req, res) => {
   const { id } = req.params;
   try {
-    const orderRes = await db.query('SELECT id, nomor_meja, tanggal, status FROM orders WHERE id = $1', [id]);
+    const orderRes = await db.query('SELECT id, nomor_meja, tanggal, status, metode_pembayaran, status_pembayaran, midtrans_token FROM orders WHERE id = $1', [id]);
     if (orderRes.rows.length === 0) {
       return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
     }
@@ -209,6 +269,68 @@ router.patch('/:id/status', verifikasiToken, async (req, res) => {
   } catch (error) {
     console.error('Error PATCH /api/orders/:id/status:', error);
     res.status(500).json({ pesan: 'Gagal mengubah status pesanan.' });
+  }
+});
+
+// 6. POST /api/orders/notification
+// Deskripsi: Menangani notifikasi status pembayaran dari Midtrans (Webhook)
+router.post('/notification', async (req, res) => {
+  const statusResponse = req.body;
+  
+  try {
+    const transactionStatus = statusResponse.transaction_status;
+    const fraudStatus = statusResponse.fraud_status;
+    
+    // Format order_id di Midtrans: ORDER-{id}-{timestamp}
+    const parts = statusResponse.order_id.split('-');
+    const dbOrderId = parseInt(parts[1]); // ID order asli di database
+    
+    if (isNaN(dbOrderId)) {
+      return res.status(400).json({ pesan: 'Order ID tidak valid.' });
+    }
+    
+    let paymentStatus = 'Belum Bayar';
+    
+    if (transactionStatus === 'capture') {
+      if (fraudStatus === 'challenge') {
+        paymentStatus = 'Belum Bayar';
+      } else if (fraudStatus === 'accept') {
+        paymentStatus = 'Sudah Bayar';
+      }
+    } else if (transactionStatus === 'settlement') {
+      paymentStatus = 'Sudah Bayar';
+    } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+      paymentStatus = 'Gagal';
+    } else if (transactionStatus === 'pending') {
+      paymentStatus = 'Belum Bayar';
+    }
+    
+    // Update status_pembayaran di database
+    await db.query('UPDATE orders SET status_pembayaran = $1 WHERE id = $2', [paymentStatus, dbOrderId]);
+    
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error handling Midtrans notification:', error);
+    res.status(500).json({ pesan: 'Terjadi kesalahan saat memproses notifikasi.' });
+  }
+});
+
+// 7. POST /api/orders/:id/mark-paid
+// Deskripsi: Menandai pesanan telah lunas secara manual (Akses Admin)
+router.post('/:id/mark-paid', verifikasiToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orderCheck = await db.query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (orderCheck.rows.length === 0) {
+      return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
+    }
+    
+    await db.query("UPDATE orders SET status_pembayaran = 'Sudah Bayar' WHERE id = $1", [id]);
+    
+    res.json({ pesan: 'Pesanan berhasil ditandai sebagai Lunas.' });
+  } catch (error) {
+    console.error('Error POST /api/orders/:id/mark-paid:', error);
+    res.status(500).json({ pesan: 'Gagal menandai lunas.' });
   }
 });
 

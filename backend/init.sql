@@ -35,7 +35,10 @@ CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     nomor_meja VARCHAR(10) NOT NULL,
     tanggal TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'Menunggu' -- 'Menunggu', 'Diproses', 'Siap', 'Selesai'
+    status VARCHAR(20) DEFAULT 'Menunggu', -- 'Menunggu', 'Diproses', 'Siap', 'Selesai'
+    metode_pembayaran VARCHAR(20) DEFAULT 'tunai', -- 'tunai' atau 'nontunai'
+    status_pembayaran VARCHAR(20) DEFAULT 'Belum Bayar', -- 'Belum Bayar' atau 'Sudah Bayar'
+    midtrans_token VARCHAR(100)
 );
 
 -- 5. Tabel Order Items (Detail item pesanan)

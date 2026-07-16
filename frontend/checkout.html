@@ -7,6 +7,7 @@
   <title>Checkout — Uncle Joe</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-N_YwW9sE40Y1pD7-"></script>
   <style>
     body {
       background: var(--surface-cream);
@@ -80,14 +81,42 @@
       </div>
     </div>
 
-    <!-- Info Pembayaran -->
-    <div
-      style="margin-top:var(--space-4);padding:var(--space-4);background:var(--status-process-bg);border:1px solid var(--status-process-border);border-radius:var(--radius-lg);display:flex;gap:var(--space-3);align-items:flex-start;">
-      <i data-lucide="info"
-        style="width:18px;height:18px;color:var(--status-process-text);flex-shrink:0;margin-top:2px;"></i>
-      <div style="font-size:0.82rem;color:var(--status-process-text);line-height:1.5;">
-        <strong>Pembayaran di Kasir.</strong> Pesanan Anda akan segera diproses setelah tombol di bawah diklik. Silakan
-        lakukan pembayaran kepada kasir setelah pesanan siap.
+    <!-- Metode Pembayaran -->
+    <div class="card mt-4">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="wallet" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Metode Pembayaran
+      </div>
+      <div class="card-body">
+        <div style="display:flex; gap: var(--space-3); margin-bottom: var(--space-4);">
+          <!-- Opsi Tunai -->
+          <div id="payTunai" class="payment-card" onclick="selectPaymentMethod('tunai')" style="flex:1; border: 2px solid var(--coffee-700); background: var(--coffee-50); border-radius: 12px; padding: var(--space-3); text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <i data-lucide="banknote" style="width: 24px; height: 24px; color: var(--coffee-800); margin: 0 auto 6px auto;"></i>
+            <div style="font-weight: 700; font-size: 0.85rem; color: var(--coffee-900);">Tunai di Kasir</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Bayar langsung ke kasir</div>
+          </div>
+          <!-- Opsi Non-Tunai -->
+          <div id="payNontunai" class="payment-card" onclick="selectPaymentMethod('nontunai')" style="flex:1; border: 1.5px solid var(--border); background: var(--surface-white); border-radius: 12px; padding: var(--space-3); text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <i data-lucide="qr-code" style="width: 24px; height: 24px; color: var(--text-muted); margin: 0 auto 6px auto;"></i>
+            <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-secondary);">Non-Tunai</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">QRIS, Gopay, Transfer</div>
+          </div>
+        </div>
+
+        <!-- Info Keterangan Pembayaran -->
+        <div id="infoTunai" style="padding:var(--space-3); background: var(--status-process-bg); border: 1px solid var(--status-process-border); border-radius: 8px; display:flex; gap: 8px; align-items:flex-start;">
+          <i data-lucide="info" style="width:16px; height:16px; color:var(--status-process-text); flex-shrink:0; margin-top:2px;"></i>
+          <div style="font-size:0.78rem; color:var(--status-process-text); line-height:1.4;">
+            <strong>Bayar Tunai di Kasir:</strong> Pesanan Anda akan dikirim ke dapur dan segera diproses. Silakan lakukan pembayaran di kasir setelah Anda selesai makan atau saat pesanan siap.
+          </div>
+        </div>
+
+        <div id="infoNontunai" style="display:none; padding:var(--space-3); background: #fdf2e9; border: 1px solid #f5c299; border-radius: 8px; gap: 8px; align-items:flex-start;">
+          <i data-lucide="info" style="width:16px; height:16px; color: #b06222; flex-shrink:0; margin-top:2px;"></i>
+          <div style="font-size:0.78rem; color: #b06222; line-height:1.4;">
+            <strong>Bayar Online (Midtrans):</strong> Pop-up pembayaran instan (E-Wallet / QRIS / VA) akan otomatis terbuka setelah Anda menekan tombol "Pesan Sekarang".
+          </div>
+        </div>
       </div>
     </div>
 
@@ -104,6 +133,7 @@
   <script>
     lucide.createIcons();
     let cart = [];
+    let metodePembayaran = 'tunai';
 
     function initCheckout() {
       cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -143,13 +173,50 @@
       document.getElementById('checkoutTotalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
     }
 
+    function selectPaymentMethod(method) {
+      metodePembayaran = method;
+      const payTunai = document.getElementById('payTunai');
+      const payNontunai = document.getElementById('payNontunai');
+      const infoTunai = document.getElementById('infoTunai');
+      const infoNontunai = document.getElementById('infoNontunai');
+
+      if (method === 'tunai') {
+        payTunai.style.borderColor = 'var(--coffee-700)';
+        payTunai.style.background = 'var(--coffee-50)';
+        payTunai.querySelector('i').style.color = 'var(--coffee-800)';
+        payTunai.querySelector('div').style.color = 'var(--coffee-900)';
+
+        payNontunai.style.borderColor = 'var(--border)';
+        payNontunai.style.background = 'var(--surface-white)';
+        payNontunai.querySelector('i').style.color = 'var(--text-muted)';
+        payNontunai.querySelector('div').style.color = 'var(--text-secondary)';
+
+        infoTunai.style.display = 'flex';
+        infoNontunai.style.display = 'none';
+      } else {
+        payNontunai.style.borderColor = 'var(--coffee-700)';
+        payNontunai.style.background = 'var(--coffee-50)';
+        payNontunai.querySelector('i').style.color = 'var(--coffee-800)';
+        payNontunai.querySelector('div').style.color = 'var(--coffee-900)';
+
+        payTunai.style.borderColor = 'var(--border)';
+        payTunai.style.background = 'var(--surface-white)';
+        payTunai.querySelector('i').style.color = 'var(--text-muted)';
+        payTunai.querySelector('div').style.color = 'var(--text-secondary)';
+
+        infoTunai.style.display = 'none';
+        infoNontunai.style.display = 'flex';
+      }
+    }
+
     async function prosesCheckout() {
       const meja = document.getElementById('nomorMejaInput').value.trim();
       if (!meja) { alert('Nomor meja harus diisi.'); return; }
 
       const payload = {
         nomor_meja: meja,
-        items: cart.map(c => ({ menu_id: c.id, qty: c.qty, varian: c.varian }))
+        items: cart.map(c => ({ menu_id: c.id, qty: c.qty, varian: c.varian })),
+        metode_pembayaran: metodePembayaran
       };
 
       const btn = document.getElementById('btnProsesPesanan');
@@ -167,8 +234,29 @@
         if (!res.ok) throw new Error(data.pesan || 'Gagal mengirim pesanan.');
 
         localStorage.removeItem('cart');
-        localStorage.setItem('nomor_meja', meja);
-        window.location.href = `status.html?id=${data.order_id}`;
+
+        if (metodePembayaran === 'nontunai' && data.snap_token) {
+          snap.pay(data.snap_token, {
+            onSuccess: function(result) {
+              window.location.href = `status.html?id=${data.order_id}`;
+            },
+            onPending: function(result) {
+              window.location.href = `status.html?id=${data.order_id}`;
+            },
+            onError: function(result) {
+              alert('Pembayaran online gagal. Silakan bayar secara tunai ke kasir.');
+              window.location.href = `status.html?id=${data.order_id}`;
+            },
+            onClose: function() {
+              alert('Anda menutup popup pembayaran. Anda tetap dapat menyelesaikan pembayaran di halaman status pesanan.');
+              window.location.href = `status.html?id=${data.order_id}`;
+            }
+          });
+        } else {
+          // Jika tunai atau fallback ke cash
+          if (data.fallback_to_cash) { alert(data.pesan); }
+          window.location.href = `status.html?id=${data.order_id}`;
+        }
       } catch (err) {
         alert(err.message);
         btn.disabled = false;

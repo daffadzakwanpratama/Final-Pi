@@ -7,6 +7,7 @@
   <title>Status Pesanan — Uncle Joe</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-N_YwW9sE40Y1pD7-"></script>
   <style>
     body {
       background: var(--surface-cream);
@@ -49,6 +50,30 @@
     <div id="statusAlertBox"
       style="padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid var(--border);text-align:center;font-weight:500;font-size:0.9rem;margin-bottom:var(--space-5);">
       Menghubungkan ke server...
+    </div>
+
+    <!-- Status Pembayaran -->
+    <div class="card mb-4" id="pembayaranCard" style="display:none; margin-bottom: var(--space-4);">
+      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="credit-card" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Informasi Pembayaran
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap: var(--space-3); padding: var(--space-4);">
+        <div style="display:flex; justify-content:space-between; font-size:0.88rem;">
+          <span style="color:var(--text-muted);">Metode Pembayaran</span>
+          <span id="metodePembayaranVal" style="font-weight:600; color:var(--text-primary);">—</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.88rem; align-items:center;">
+          <span style="color:var(--text-muted);">Status Pembayaran</span>
+          <span id="statusPembayaranBadge" class="badge" style="text-transform:none;">—</span>
+        </div>
+        <div id="btnBayarUlangContainer" style="display:none; margin-top:var(--space-2);">
+          <button id="btnBayarUlang" class="btn btn-primary btn-full btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i data-lucide="wallet" style="width:16px; height:16px;"></i>
+            Bayar Sekarang (Online)
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Status Tracker (Vertikal) -->
@@ -150,6 +175,49 @@
       const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       document.getElementById('waktuText').textContent = `Dipesan pukul ${waktu} WIB`;
       document.getElementById('mejaBadge').textContent = `Meja ${order.nomor_meja}`;
+
+      // Pembayaran
+      if (order.metode_pembayaran) {
+        document.getElementById('pembayaranCard').style.display = 'block';
+        document.getElementById('metodePembayaranVal').textContent = order.metode_pembayaran === 'nontunai' ? 'Non-Tunai (Online)' : 'Tunai di Kasir';
+
+        const pBadge = document.getElementById('statusPembayaranBadge');
+        pBadge.textContent = order.status_pembayaran;
+        
+        // Reset styles and classes
+        pBadge.className = 'badge';
+        pBadge.style.background = '';
+        pBadge.style.color = '';
+        pBadge.style.borderColor = '';
+
+        if (order.status_pembayaran === 'Sudah Bayar') {
+          pBadge.classList.add('badge-selesai');
+          document.getElementById('btnBayarUlangContainer').style.display = 'none';
+        } else if (order.status_pembayaran === 'Belum Bayar') {
+          pBadge.classList.add('badge-menunggu');
+          if (order.metode_pembayaran === 'nontunai' && order.midtrans_token) {
+            document.getElementById('btnBayarUlangContainer').style.display = 'block';
+            document.getElementById('btnBayarUlang').onclick = function() {
+              snap.pay(order.midtrans_token, {
+                onSuccess: function(result) { dapatkanStatus(); },
+                onPending: function(result) { dapatkanStatus(); },
+                onError: function(result) { dapatkanStatus(); },
+                onClose: function() { dapatkanStatus(); }
+              });
+            };
+          } else {
+            document.getElementById('btnBayarUlangContainer').style.display = 'none';
+          }
+        } else {
+          // Gagal / Expired
+          pBadge.style.background = '#fde8e8';
+          pBadge.style.color = '#9b1c1c';
+          pBadge.style.borderColor = '#f8b4b4';
+          document.getElementById('btnBayarUlangContainer').style.display = 'none';
+        }
+      } else {
+        document.getElementById('pembayaranCard').style.display = 'none';
+      }
 
       // Detail Items
       let total = 0;
