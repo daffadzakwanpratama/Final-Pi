@@ -64,9 +64,8 @@
         <div class="admin-topbar-title">Dashboard</div>
         <div class="admin-topbar-sub" id="greetingText">Selamat datang, Admin</div>
       </div>
-      <div style="display:flex;align-items:center;gap:var(--space-3);">
+      <div style="display:flex;align-items:center;padding-right:12px;">
         <span style="font-size:0.82rem;color:var(--text-muted);" id="dateText"></span>
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--coffee-700);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;" id="adminAvatar">A</div>
       </div>
     </div>
 
@@ -161,7 +160,6 @@
 
     const username = localStorage.getItem('admin_username') || 'Admin';
     document.getElementById('greetingText').textContent = `Selamat datang, ${username}`;
-    document.getElementById('adminAvatar').textContent = username.charAt(0).toUpperCase();
     document.getElementById('dateText').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     async function loadDashboard() {
