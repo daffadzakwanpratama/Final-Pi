@@ -9,7 +9,8 @@ const PORT = process.env.PORT || 3281;
 
 // Middleware global
 app.use(cors());
-app.use(express.json()); // Parsing JSON request body
+app.use(express.json({ limit: '10mb' })); // Parsing JSON request body dengan limit 10MB
+app.use(express.urlencoded({ limit: '10mb', extended: true })); // Parsing urlencoded dengan limit 10MB
 
 // Menghubungkan rute-rute REST API
 const authRoutes = require('./routes/auth');
