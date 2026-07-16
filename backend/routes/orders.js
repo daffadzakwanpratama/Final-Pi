@@ -355,4 +355,18 @@ router.post('/:id/update-payment-client', async (req, res) => {
   }
 });
 
+// 9. DELETE /api/orders/today
+// Deskripsi: Menghapus semua pesanan hari ini (Akses Admin)
+router.delete('/today', verifikasiToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      "DELETE FROM orders WHERE DATE(tanggal) = CURRENT_DATE"
+    );
+    res.json({ pesan: `Berhasil menghapus ${result.rowCount} pesanan hari ini.` });
+  } catch (error) {
+    console.error('Error DELETE /api/orders/today:', error);
+    res.status(500).json({ pesan: 'Gagal menghapus pesanan hari ini.' });
+  }
+});
+
 module.exports = router;
