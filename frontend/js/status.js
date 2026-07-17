@@ -1,10 +1,23 @@
+// =================================================================
+// Skrip Pemantauan Status Pesanan Pelanggan (status.js)
+// Deskripsi: Melakukan polling real-time ke API backend untuk memantau 
+//            status pesanan, status pembayaran, dan memperbarui UI.
+// =================================================================
+
+// 1. Inisialisasi Parameter Halaman
+// Mengambil ID pesanan dari query parameter URL (?id=X)
 const urlParams = new URLSearchParams(window.location.search);
 const orderId = urlParams.get('id');
-if (!orderId) { window.location.href = 'menu.html'; }
+if (!orderId) { 
+  window.location.href = 'menu.html'; 
+}
 
+// Tampilkan ID Pesanan pada header dan inisialisasi ikon Lucide
 document.getElementById('orderIdText').textContent = `#${orderId}`;
 lucide.createIcons();
 
+// 2. Fungsi dapatkanStatus
+// Deskripsi: Mengambil data status pesanan terbaru dari API backend
 async function dapatkanStatus() {
   try {
     const res = await fetch(`/api/orders/${orderId}/status`);
@@ -17,16 +30,18 @@ async function dapatkanStatus() {
   }
 }
 
+// 3. Fungsi perbaruiUI
+// Deskripsi: Memperbarui seluruh elemen UI berdasarkan status pesanan & pembayaran terbaru
 function perbaruiUI(data) {
   const order = data.order;
   const items = data.items;
 
-  // Waktu & Meja
+  // Format waktu lokal (WIB) dan perbarui info pelanggan/nomor meja
   const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   document.getElementById('waktuText').textContent = `${order.nama_pelanggan || 'Pelanggan'} • Meja ${order.nomor_meja} • Pukul ${waktu} WIB`;
   document.getElementById('mejaBadge').textContent = `Meja ${order.nomor_meja}`;
 
-  // Pembayaran
+  // Memperbarui Kartu Detail Pembayaran
   if (order.metode_pembayaran) {
     document.getElementById('pembayaranCard').style.display = 'block';
     document.getElementById('metodePembayaranVal').textContent = order.metode_pembayaran === 'nontunai' ? 'Non-Tunai (Online)' : 'Tunai di Kasir';
@@ -34,7 +49,7 @@ function perbaruiUI(data) {
     const pBadge = document.getElementById('statusPembayaranBadge');
     pBadge.textContent = order.status_pembayaran;
     
-    // Reset styles and classes
+    // Reset kelas/style badge status pembayaran
     pBadge.className = 'badge';
     pBadge.style.background = '';
     pBadge.style.color = '';
@@ -45,6 +60,7 @@ function perbaruiUI(data) {
       document.getElementById('btnBayarUlangContainer').style.display = 'none';
     } else if (order.status_pembayaran === 'Belum Bayar') {
       pBadge.classList.add('badge-menunggu');
+      // Jika pembayaran online nontunai belum dibayar, tampilkan tombol bayar ulang via Midtrans
       if (order.metode_pembayaran === 'nontunai' && order.midtrans_token) {
         document.getElementById('btnBayarUlangContainer').style.display = 'block';
         document.getElementById('btnBayarUlang').onclick = function() {
@@ -79,7 +95,7 @@ function perbaruiUI(data) {
         document.getElementById('btnBayarUlangContainer').style.display = 'none';
       }
     } else {
-      // Gagal / Expired
+      // Pembayaran Gagal / Kadaluwarsa (Expired)
       pBadge.style.background = '#fde8e8';
       pBadge.style.color = '#9b1c1c';
       pBadge.style.borderColor = '#f8b4b4';
@@ -89,7 +105,7 @@ function perbaruiUI(data) {
     document.getElementById('pembayaranCard').style.display = 'none';
   }
 
-  // Detail Items
+  // Memperbarui Daftar Detail Menu Pesanan
   let total = 0;
   document.getElementById('orderItemsList').innerHTML = items.map(item => {
     total += item.subtotal;
@@ -101,7 +117,7 @@ function perbaruiUI(data) {
   }).join('');
   document.getElementById('totalHargaText').textContent = `Rp ${total.toLocaleString('id-ID')}`;
 
-  // Tracker Status
+  // Memperbarui Tracker Alur Pesanan (Progress Steps)
   const urutanStatus = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
   const idxAktif = urutanStatus.indexOf(order.status);
 
@@ -112,7 +128,7 @@ function perbaruiUI(data) {
     if (idx === idxAktif) el.classList.add('active');
   });
 
-  // Alert Box
+  // Memperbarui Kotak Alert/Pemberitahuan Status Utama
   const alert = document.getElementById('statusAlertBox');
   const configs = {
     'Menunggu': { bg: 'var(--status-waiting-bg)', color: 'var(--status-waiting-text)', border: 'var(--status-waiting-border)', icon: 'clock', msg: 'Pesanan Anda diterima. Sedang menunggu konfirmasi.' },
@@ -128,6 +144,11 @@ function perbaruiUI(data) {
   lucide.createIcons();
 }
 
+// Menjalankan fungsi fetch status pertama kali saat halaman dimuat
 dapatkanStatus();
+
+// Mengaktifkan mekanisme polling otomatis setiap 10 detik
 const interval = setInterval(dapatkanStatus, 10000);
+
+// Menghapus interval polling ketika pelanggan menutup atau meninggalkan halaman
 window.addEventListener('beforeunload', () => clearInterval(interval));

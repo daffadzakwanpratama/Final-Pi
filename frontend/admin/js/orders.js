@@ -1,11 +1,27 @@
-lucide.createIcons();
-const token = localStorage.getItem('admin_token');
-if (!token) { alert('Akses ditolak.'); window.location.href = '/admin/login.html'; }
+// =================================================================
+// Skrip Antrean Pesanan Administrator (orders.js)
+// Deskripsi: Mengelola antrean pesanan pelanggan, filter status,
+//            pembaruan status pesanan, validasi pembayaran, dan
+//            auto-refresh halaman secara real-time.
+// =================================================================
 
+// Inisialisasi ikon Lucide di halaman manajemen pesanan
+lucide.createIcons();
+
+// 1. Validasi Sesi Admin (Proteksi Halaman)
+// Deskripsi: Memeriksa keberadaan token jwt admin, jika tidak ada alihkan ke login
+const token = localStorage.getItem('admin_token');
+if (!token) { 
+  alert('Akses ditolak.'); 
+  window.location.href = '/admin/login.html'; 
+}
+
+// Inisialisasi variabel global untuk pesanan dan filter status yang sedang aktif
 let allOrders = [];
 let filterAktif = 'Semua';
 
-// Konfigurasi tiap status
+// 2. Konfigurasi Visual & Alur untuk Tiap Status Pesanan
+// Deskripsi: Menentukan visual badge, tahapan alur pesanan berikutnya, label tombol, dan warna border card
 const statusConfig = {
   'Menunggu': {
     badgeClass:  'badge-menunggu',
@@ -41,6 +57,8 @@ const statusConfig = {
   },
 };
 
+// 3. Fungsi setFilter
+// Deskripsi: Menyaring antrean pesanan berdasarkan status (Semua, Menunggu, Diproses, Siap, Selesai)
 function setFilter(status, el) {
   filterAktif = status;
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -48,6 +66,8 @@ function setFilter(status, el) {
   renderOrders();
 }
 
+// 4. Fungsi loadOrders
+// Deskripsi: Mengambil seluruh pesanan dari API backend
 async function loadOrders() {
   try {
     const res = await fetch('/api/orders', {
@@ -67,6 +87,8 @@ async function loadOrders() {
   }
 }
 
+// 5. Fungsi updateBadges
+// Deskripsi: Memperbarui penunjuk jumlah pesanan aktif pada tab filter atas
 function updateBadges() {
   ['Menunggu','Diproses','Siap'].forEach(s => {
     const count = allOrders.filter(o => o.status === s).length;
@@ -75,18 +97,20 @@ function updateBadges() {
   });
 }
 
+// 6. Fungsi renderOrders
+// Deskripsi: Menyusun tata letak kartu pesanan (Urutan FIFO untuk pesanan aktif, LIFO untuk pesanan Selesai)
 function renderOrders() {
   const container = document.getElementById('ordersContainer');
   let filtered  = filterAktif === 'Semua' ? allOrders : allOrders.filter(o => o.status === filterAktif);
 
-  // Urutkan: aktif (Menunggu/Diproses/Siap) di atas secara FIFO, Selesai di bawah (terbaru dulu)
+  // Mengurutkan pesanan: antrean aktif berada di atas secara FIFO, pesanan selesai berada di paling bawah (terbaru dulu)
   const urutan = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
   filtered = [...filtered].sort((a, b) => {
     const rankA = urutan.indexOf(a.status);
     const rankB = urutan.indexOf(b.status);
     if (rankA !== rankB) return rankA - rankB;
     if (a.status === 'Selesai') return new Date(b.tanggal) - new Date(a.tanggal);
-    return new Date(a.tanggal) - new Date(b.tanggal); // FIFO untuk aktif
+    return new Date(a.tanggal) - new Date(b.tanggal); // FIFO untuk antrean yang sedang berjalan
   });
 
   if (!filtered.length) {
@@ -105,6 +129,7 @@ function renderOrders() {
     const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const tgl   = new Date(order.tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'short' });
 
+    // Merender deretan detail item pesanan
     const itemsHtml = (order.items || []).map(item => {
       const vText = item.varian ? ` (${item.varian})` : '';
       return `<div class="order-item-row">
@@ -113,9 +138,10 @@ function renderOrders() {
       </div>`;
     }).join('');
 
-    // Hitung total dari sum items.subtotal (kolom total_harga tidak ada di tabel orders)
+    // Menjumlahkan subtotal item untuk menampilkan total harga/tagihan
     const totalHarga = (order.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
 
+    // Tombol perubahan status alur pesanan berikutnya
     const actionBtn = cfg.nextStatus ? `
       <button onclick="updateStatus(${order.id}, '${cfg.nextStatus}')" class="btn ${cfg.btnClass} btn-sm" style="width:auto;">
         <i data-lucide="${cfg.nextIcon}" style="width:14px;height:14px;"></i>
@@ -125,13 +151,15 @@ function renderOrders() {
     const paymentMethodText = order.metode_pembayaran === 'nontunai' ? '💳 Non-Tunai' : '💵 Tunai';
     const paymentStatusText = order.status_pembayaran || 'Belum Bayar';
     
+    // Penyesuaian class badge status pembayaran
     let paymentBadgeClass = 'badge-menunggu';
     if (order.status_pembayaran === 'Sudah Bayar') {
       paymentBadgeClass = 'badge-selesai';
     } else if (order.status_pembayaran === 'Gagal') {
-      paymentBadgeClass = 'badge-diproses'; // will highlight or show red
+      paymentBadgeClass = 'badge-diproses'; 
     }
 
+    // Tombol lunas manual (hanya muncul untuk pembayaran tunai yang belum lunas)
     const markPaidBtn = (order.metode_pembayaran === 'tunai' && order.status_pembayaran === 'Belum Bayar') ? `
       <button onclick="markOrderPaid(${order.id})" class="btn btn-secondary btn-sm" style="width:auto;font-size:0.75rem;padding:4px 10px;margin-right:8px;background:#fdf2e9;color:#b06222;border-color:#f5c299;display:inline-flex;align-items:center;gap:4px;">
         <i data-lucide="check" style="width:12px;height:12px;"></i> Lunas
@@ -173,6 +201,8 @@ function renderOrders() {
   lucide.createIcons();
 }
 
+// 7. Fungsi updateStatus
+// Deskripsi: Mengubah status antrean pesanan pelanggan ke tahapan alur berikutnya di database
 async function updateStatus(orderId, newStatus) {
   try {
     const res = await fetch(`/api/orders/${orderId}/status`, {
@@ -181,12 +211,14 @@ async function updateStatus(orderId, newStatus) {
       body: JSON.stringify({ status: newStatus })
     });
     if (!res.ok) throw new Error();
-    loadOrders(); // Refresh setelah update
+    loadOrders(); // Muat ulang pesanan setelah berhasil diperbarui
   } catch {
     alert('Gagal mengubah status pesanan. Coba lagi.');
   }
 }
 
+// 8. Fungsi markOrderPaid
+// Deskripsi: Mengubah status pembayaran pesanan menjadi lunas secara manual oleh kasir
 async function markOrderPaid(orderId) {
   if (!confirm('Tandai pesanan ini sebagai Lunas / Sudah Bayar?')) return;
   try {
@@ -195,18 +227,22 @@ async function markOrderPaid(orderId) {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) throw new Error();
-    loadOrders(); // Refresh setelah update
+    loadOrders(); // Muat ulang pesanan setelah pembayaran lunas dicatat
   } catch {
     alert('Gagal menandai lunas. Coba lagi.');
   }
 }
 
+// 9. Fungsi logout
+// Deskripsi: Menghapus token admin dan beralih ke halaman login
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   window.location.href = '/admin/login.html';
 }
 
+// 10. Fungsi clearTodayOrders
+// Deskripsi: Menghapus seluruh data transaksi pesanan di database dengan konfirmasi ganda
 async function clearTodayOrders() {
   if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) {
     return;
@@ -224,6 +260,8 @@ async function clearTodayOrders() {
   }
 }
 
+// Memulai pemuatan awal data pesanan
 loadOrders();
-// Auto refresh setiap 30 detik
+
+// Menyalakan fitur auto-refresh antrean pesanan setiap 30 detik
 setInterval(loadOrders, 30000);

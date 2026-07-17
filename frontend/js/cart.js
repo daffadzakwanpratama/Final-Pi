@@ -1,15 +1,27 @@
+// =================================================================
+// Skrip Manajemen Keranjang Belanja Pelanggan (cart.js)
+// Deskripsi: Mengelola penyimpanan, tampilan, perubahan kuantitas, 
+//            dan penghapusan menu dari keranjang belanja di LocalStorage.
+// =================================================================
+
+// Inisialisasi array keranjang kosong secara global
 let cart = [];
 
+// 1. Fungsi loadCart
+// Deskripsi: Mengambil data keranjang dari LocalStorage saat halaman dimuat
 function loadCart() {
   cart = JSON.parse(localStorage.getItem('cart')) || [];
   renderCart();
 }
 
+// 2. Fungsi renderCart
+// Deskripsi: Menampilkan daftar item belanjaan, subtotal, dan total pembayaran
 function renderCart() {
   const container = document.getElementById('cartItemsContainer');
   const summary = document.getElementById('summarySection');
   lucide.createIcons();
 
+  // Jika keranjang kosong, tampilkan pesan kosong dan sembunyikan ringkasan belanja
   if (cart.length === 0) {
     container.innerHTML = `
       <div style="text-align:center;padding:var(--space-8) 0;">
@@ -25,6 +37,7 @@ function renderCart() {
     return;
   }
 
+  // Hitung total dan buat elemen HTML untuk setiap item keranjang
   let total = 0;
   container.innerHTML = cart.map((item, idx) => {
     const subtotal = item.harga * item.qty;
@@ -58,18 +71,23 @@ function renderCart() {
     `;
   }).join('');
 
+  // Perbarui nilai subtotal dan total pembayaran di UI
   document.getElementById('subtotalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
   document.getElementById('totalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
   summary.style.display = 'block';
   lucide.createIcons();
 }
 
+// 3. Fungsi updateQty
+// Deskripsi: Mengubah kuantitas item dalam keranjang (+1 atau -1)
 function updateQty(idx, change) {
   cart[idx].qty += change;
   if (cart[idx].qty <= 0) cart.splice(idx, 1);
   saveAndRender();
 }
 
+// 4. Fungsi removeItem
+// Deskripsi: Menghapus item tertentu dari keranjang dengan konfirmasi
 function removeItem(idx) {
   if (confirm(`Hapus "${cart[idx].nama}" dari keranjang?`)) {
     cart.splice(idx, 1);
@@ -77,6 +95,8 @@ function removeItem(idx) {
   }
 }
 
+// 5. Fungsi clearCart
+// Deskripsi: Menghapus seluruh item dari keranjang dengan konfirmasi
 function clearCart() {
   if (confirm('Kosongkan seluruh keranjang?')) {
     cart = [];
@@ -84,9 +104,12 @@ function clearCart() {
   }
 }
 
+// 6. Fungsi saveAndRender
+// Deskripsi: Menyimpan array keranjang ke LocalStorage dan merender ulang UI
 function saveAndRender() {
   localStorage.setItem('cart', JSON.stringify(cart));
   renderCart();
 }
 
+// Mulai muat keranjang saat halaman diakses
 loadCart();

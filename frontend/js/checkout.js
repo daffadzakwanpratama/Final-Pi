@@ -1,11 +1,24 @@
+// =================================================================
+// Skrip Proses Checkout & Pembayaran Pelanggan (checkout.js)
+// Deskripsi: Mengelola ringkasan pesanan, pemilihan metode pembayaran 
+//            (Tunai/Nontunai), integrasi payment gateway Midtrans Snap,
+//            dan pengiriman data pesanan ke backend.
+// =================================================================
+
+// Inisialisasi ikon Lucide di halaman
 lucide.createIcons();
+
+// Inisialisasi variabel global untuk keranjang dan metode pembayaran default
 let cart = [];
 let metodePembayaran = 'tunai';
 
+// 1. Fungsi initCheckout
+// Deskripsi: Memvalidasi ketersediaan meja dan keranjang belanja saat halaman checkout dimuat
 function initCheckout() {
   cart = JSON.parse(localStorage.getItem('cart')) || [];
   const noMeja = localStorage.getItem('nomor_meja') || '';
 
+  // Validasi nomor meja
   if (!noMeja) {
     alert('Nomor meja tidak terdeteksi. Silakan pilih meja terlebih dahulu.');
     window.location.href = 'index.html';
@@ -14,6 +27,7 @@ function initCheckout() {
 
   document.getElementById('nomorMejaInput').value = noMeja;
 
+  // Validasi isi keranjang
   if (cart.length === 0) {
     alert('Keranjang kosong. Silakan pilih menu terlebih dahulu.');
     window.location.href = 'menu.html';
@@ -22,6 +36,8 @@ function initCheckout() {
   renderSummary();
 }
 
+// 2. Fungsi renderSummary
+// Deskripsi: Menampilkan daftar ringkasan menu yang dibeli beserta subtotal dan total harga
 function renderSummary() {
   const list = document.getElementById('checkoutItemsList');
   let total = 0;
@@ -40,6 +56,8 @@ function renderSummary() {
   document.getElementById('checkoutTotalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
+// 3. Fungsi selectPaymentMethod
+// Deskripsi: Mengubah metode pembayaran terpilih (Tunai vs Nontunai) di UI
 function selectPaymentMethod(method) {
   metodePembayaran = method;
   const payTunai = document.getElementById('payTunai');
@@ -60,13 +78,17 @@ function selectPaymentMethod(method) {
   }
 }
 
+// 4. Fungsi prosesCheckout
+// Deskripsi: Mengirimkan pesanan ke backend API, dan memicu pop-up Midtrans jika nontunai
 async function prosesCheckout() {
   const meja = document.getElementById('nomorMejaInput').value.trim();
   const nama = document.getElementById('namaPemesanInput').value.trim();
   
+  // Validasi input nama dan nomor meja
   if (!nama) { alert('Silakan masukkan nama pemesan.'); return; }
   if (!meja) { alert('Nomor meja harus diisi.'); return; }
 
+  // Menyusun data payload pesanan
   const payload = {
     nomor_meja: meja,
     nama_pelanggan: nama,
@@ -74,12 +96,14 @@ async function prosesCheckout() {
     metode_pembayaran: metodePembayaran
   };
 
+  // Menonaktifkan tombol untuk mencegah klik ganda (double-submit)
   const btn = document.getElementById('btnProsesPesanan');
   btn.disabled = true;
   btn.innerHTML = '<i data-lucide="loader-circle" style="width:18px;height:18px;"></i> Memproses...';
   lucide.createIcons();
 
   try {
+    // Mengirim pesanan ke API backend
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,11 +112,14 @@ async function prosesCheckout() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.pesan || 'Gagal mengirim pesanan.');
 
+    // Hapus data keranjang lokal setelah pesanan sukses dibuat
     localStorage.removeItem('cart');
 
+    // Jika metode pembayaran Nontunai dan Snap Token tersedia dari Midtrans
     if (metodePembayaran === 'nontunai' && data.snap_token) {
       snap.pay(data.snap_token, {
         onSuccess: function(result) {
+          // Pembayaran berhasil
           fetch(`/api/orders/${data.order_id}/update-payment-client`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -104,6 +131,7 @@ async function prosesCheckout() {
           });
         },
         onPending: function(result) {
+          // Pembayaran tertunda (pending)
           fetch(`/api/orders/${data.order_id}/update-payment-client`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -115,10 +143,12 @@ async function prosesCheckout() {
           });
         },
         onError: function(result) {
+          // Pembayaran error
           alert('Pembayaran online gagal. Silakan bayar secara tunai ke kasir.');
           window.location.href = `status.html?id=${data.order_id}`;
         },
         onClose: function() {
+          // Popup ditutup oleh pengguna
           alert('Anda menutup popup pembayaran. Anda tetap dapat menyelesaikan pembayaran di halaman status pesanan.');
           window.location.href = `status.html?id=${data.order_id}`;
         }
@@ -129,6 +159,7 @@ async function prosesCheckout() {
       window.location.href = `status.html?id=${data.order_id}`;
     }
   } catch (err) {
+    // Tangani error jika koneksi/proses gagal
     alert(err.message);
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Pesan Sekarang';
@@ -136,5 +167,8 @@ async function prosesCheckout() {
   }
 }
 
+// Menambahkan event listener pada tombol proses pesanan
 document.getElementById('btnProsesPesanan').addEventListener('click', prosesCheckout);
+
+// Memulai inisialisasi halaman checkout
 initCheckout();

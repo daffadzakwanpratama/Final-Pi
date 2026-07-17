@@ -1,10 +1,26 @@
-lucide.createIcons();
-const token = localStorage.getItem('admin_token');
-if (!token) { alert('Akses ditolak.'); window.location.href = '/admin/login.html'; }
+// =================================================================
+// Skrip Kelola Kategori Administrator (categories.js)
+// Deskripsi: Mengelola data kategori menu (CRUD) oleh administrator, 
+//            termasuk memuat, menampilkan tabel, dan menangani modal.
+// =================================================================
 
+// Inisialisasi ikon Lucide di halaman manajemen kategori
+lucide.createIcons();
+
+// 1. Validasi Sesi Admin (Proteksi Halaman)
+// Deskripsi: Memeriksa keberadaan token jwt admin, jika tidak ada alihkan ke login
+const token = localStorage.getItem('admin_token');
+if (!token) { 
+  alert('Akses ditolak.'); 
+  window.location.href = '/admin/login.html'; 
+}
+
+// Inisialisasi array penampung kategori dan mode state modal (Tambah vs Edit)
 let allCategories = [];
 let modalMode = 'add';
 
+// 2. Fungsi loadCategories
+// Deskripsi: Mengambil seluruh data kategori aktif dari API backend
 async function loadCategories() {
   try {
     const res = await fetch('/api/categories');
@@ -16,6 +32,8 @@ async function loadCategories() {
   }
 }
 
+// 3. Fungsi renderCatTable
+// Deskripsi: Merender baris data kategori dalam bentuk tabel HTML
 function renderCatTable() {
   const tbody = document.getElementById('catTableBody');
   if (!allCategories.length) {
@@ -47,6 +65,8 @@ function renderCatTable() {
   lucide.createIcons();
 }
 
+// 4. Fungsi openCatModal
+// Deskripsi: Membuka pop-up modal input kategori dengan mode tertentu (add/edit)
 function openCatModal(mode) {
   modalMode = mode;
   document.getElementById('catForm').reset();
@@ -56,10 +76,14 @@ function openCatModal(mode) {
   lucide.createIcons();
 }
 
+// 5. Fungsi closeCatModal
+// Deskripsi: Menutup pop-up modal input kategori
 function closeCatModal() {
   document.getElementById('catModal').classList.remove('show');
 }
 
+// 6. Fungsi editCatPrep
+// Deskripsi: Mempersiapkan modal edit dengan memuat data kategori terpilih
 function editCatPrep(id) {
   const cat = allCategories.find(c => c.id === id);
   if (!cat) return;
@@ -68,10 +92,13 @@ function editCatPrep(id) {
   document.getElementById('namaKategori').value = cat.nama;
 }
 
+// 7. Fungsi submitCat
+// Deskripsi: Mengirimkan data input kategori baru atau hasil edit ke API backend
 async function submitCat() {
   const id   = document.getElementById('catIdField').value;
   const nama = document.getElementById('namaKategori').value.trim();
 
+  // Validasi input nama
   if (!nama) { alert('Nama kategori wajib diisi.'); return; }
 
   const url    = modalMode === 'edit' ? `/api/categories/${id}` : '/api/categories';
@@ -101,6 +128,8 @@ async function submitCat() {
   }
 }
 
+// 8. Fungsi hapusCat
+// Deskripsi: Menghapus kategori berdasarkan ID dari API backend setelah konfirmasi
 async function hapusCat(id, nama) {
   if (!confirm(`Hapus kategori "${nama}"? Menu yang terikat dengan kategori ini tidak akan otomatis terhapus.`)) return;
   try {
@@ -116,14 +145,18 @@ async function hapusCat(id, nama) {
   }
 }
 
+// 9. Fungsi logout
+// Deskripsi: Menghapus token admin dan beralih ke halaman login
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   window.location.href = '/admin/login.html';
 }
 
+// Event listener agar modal menutup saat area luar modal diklik
 document.getElementById('catModal').addEventListener('click', function(e) {
   if (e.target === this) closeCatModal();
 });
 
+// Memulai pemuatan awal daftar kategori
 loadCategories();

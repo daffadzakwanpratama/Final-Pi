@@ -1,18 +1,36 @@
+// =================================================================
+// Skrip Halaman Menu Utama Pelanggan (menu.js)
+// Deskripsi: Mengelola data menu, kategori dinamis, filter menu, 
+//            detail modal menu dengan pemilihan varian (Hot/Ice), 
+//            serta proses penambahan menu ke keranjang belanja.
+// =================================================================
+
+// Variabel global untuk menyimpan data dari database dan state UI
 let listMenu = [];
 let listCategories = [];
 let kategoriAktif = 'Semua';
 
-// Ambil nomor meja dari URL / localStorage
+// 1. Inisialisasi nomor meja pelanggan
+// Mengambil nomor meja dari URL parameter atau memulihkannya dari localStorage
 const urlParams = new URLSearchParams(window.location.search);
 let noMeja = urlParams.get('meja');
-if (noMeja) { localStorage.setItem('nomor_meja', noMeja); }
-else { noMeja = localStorage.getItem('nomor_meja'); }
+if (noMeja) { 
+  localStorage.setItem('nomor_meja', noMeja); 
+} else { 
+  noMeja = localStorage.getItem('nomor_meja'); 
+}
 
-if (!noMeja) { window.location.href = 'index.html'; }
+// Redirect ke halaman index.html jika nomor meja tidak terdeteksi
+if (!noMeja) { 
+  window.location.href = 'index.html'; 
+}
 
+// Tampilkan nomor meja pada elemen text
 document.getElementById('mejaText').textContent = `Meja ${noMeja}`;
 lucide.createIcons();
 
+// 2. Fungsi getCategoryIcon
+// Deskripsi: Menentukan ikon Lucide yang relevan berdasarkan nama kategori secara dinamis
 function getCategoryIcon(name) {
   const n = name.toLowerCase();
   if (n.includes('semua')) return 'sparkles';
@@ -22,6 +40,8 @@ function getCategoryIcon(name) {
   return 'tag';
 }
 
+// 3. Fungsi loadCategories
+// Deskripsi: Mengambil seluruh daftar kategori dari API backend
 async function loadCategories() {
   try {
     const res = await fetch('/api/categories');
@@ -33,6 +53,8 @@ async function loadCategories() {
   }
 }
 
+// 4. Fungsi renderCategoryChips
+// Deskripsi: Merender tombol filter kategori (Chips) secara dinamis ke halaman
 function renderCategoryChips() {
   const container = document.getElementById('categoryScroll');
   let chipsHtml = `
@@ -55,7 +77,8 @@ function renderCategoryChips() {
   lucide.createIcons();
 }
 
-// Ambil daftar menu dari server
+// 5. Fungsi loadMenu
+// Deskripsi: Mengambil daftar menu aktif dari backend API
 async function loadMenu() {
   try {
     const res = await fetch('/api/menu');
@@ -72,7 +95,8 @@ async function loadMenu() {
   }
 }
 
-// Helper function to get menu tags dynamically based on product item
+// 6. Fungsi getMenuTag
+// Deskripsi: Menentukan label/tag promosi untuk menu secara dinamis berdasarkan nama atau status favorit
 function getMenuTag(m) {
   if (m.is_favorit) return 'Favorit';
   const name = m.nama;
@@ -83,7 +107,8 @@ function getMenuTag(m) {
   return null;
 }
 
-// Helper function to render a menu card
+// 7. Fungsi renderMenuCard
+// Deskripsi: Membuat markup HTML untuk satu buah kartu menu
 function renderMenuCard(m) {
   const tag = getMenuTag(m);
   const tagHtml = tag ? `<span class="menu-card-tag">${tag}</span>` : '';
@@ -114,12 +139,12 @@ function renderMenuCard(m) {
   `;
 }
 
-// Render kartu menu
+// 8. Fungsi renderMenu
+// Deskripsi: Mengelompokkan menu berdasarkan kategori dan menampilkan daftar menu ke halaman
 function renderMenu() {
   const list = document.getElementById('menuList');
 
   if (kategoriAktif === 'Semua') {
-    // Group by category
     const activeCats = listCategories.filter(cat => listMenu.some(m => m.kategori === cat.nama));
 
     if (listMenu.length === 0) {
@@ -153,7 +178,6 @@ function renderMenu() {
       }
     });
 
-    // Leftover items without category
     const leftoverItems = listMenu.filter(m => !listCategories.some(cat => cat.nama === m.kategori));
     if (leftoverItems.length > 0) {
       const marginTop = isFirst ? 'margin-top: var(--space-2);' : 'margin-top: var(--space-6);';
@@ -172,7 +196,6 @@ function renderMenu() {
 
     list.innerHTML = html;
   } else {
-    // Flat list for specific category
     const filtered = listMenu.filter(m => m.kategori === kategoriAktif);
 
     if (filtered.length === 0) {
@@ -185,7 +208,6 @@ function renderMenu() {
       return;
     }
 
-    // Header for single category
     let html = `
       <div class="category-divider" style="grid-column: 1 / -1; margin-top: var(--space-2); margin-bottom: var(--space-4);">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -201,7 +223,8 @@ function renderMenu() {
   lucide.createIcons();
 }
 
-// Filter kategori
+// 9. Fungsi filterKategori
+// Deskripsi: Mengubah filter kategori aktif berdasarkan chip yang diklik pengguna
 function filterKategori(kat, el) {
   kategoriAktif = kat;
   document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
@@ -209,7 +232,8 @@ function filterKategori(kat, el) {
   renderMenu();
 }
 
-// Modal
+// 10. Fungsi openModal
+// Deskripsi: Membuka pop-up modal detail menu, memuat informasi detail dan pengaturan varian (Hot/Ice)
 function openModal(id) {
   const m = listMenu.find(x => x.id === id);
   if (!m) return;
@@ -222,11 +246,10 @@ function openModal(id) {
   if (m.is_hot_ice) {
     vSec.style.display = 'block';
 
-    // Overwrite click events untuk meneruskan menu ID
     document.getElementById('optHot').onclick = () => selectVariant('Hot', id);
     document.getElementById('optIce').onclick = () => selectVariant('Ice', id);
 
-    selectVariant('Ice', id); // Default ke Ice
+    selectVariant('Ice', id);
   } else {
     vSec.style.display = 'none';
     document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
@@ -236,6 +259,8 @@ function openModal(id) {
   document.getElementById('detailModal').classList.add('show');
 }
 
+// 11. Fungsi selectVariant
+// Deskripsi: Mengatur visual dan memperbarui tampilan harga di modal ketika varian (Hot/Ice) diubah
 function selectVariant(val, menuId) {
   document.querySelectorAll('.variant-opt').forEach(el => {
     el.style.borderColor = 'var(--border)';
@@ -248,7 +273,6 @@ function selectVariant(val, menuId) {
   selected.style.color = 'var(--primary)';
   selected.querySelector('input').checked = true;
 
-  // Update harga modal sesuai varian
   const m = listMenu.find(x => x.id === menuId);
   if (m) {
     const hargaVarian = val === 'Hot' ? m.harga_hot : m.harga_ice;
@@ -256,16 +280,18 @@ function selectVariant(val, menuId) {
   }
 }
 
+// 12. Fungsi closeModal
+// Deskripsi: Menutup pop-up modal detail menu
 function closeModal() {
   document.getElementById('detailModal').classList.remove('show');
 }
 
-// Keranjang
+// 13. Fungsi addToCart
+// Deskripsi: Menambahkan item menu terpilih (beserta varian jika ada) ke dalam keranjang belanja LocalStorage
 function addToCart(id, checkVarian = false) {
   const m = listMenu.find(x => x.id === id);
   if (!m) return;
 
-  // Jika memesan langsung dari kartu menu grid luar dan memiliki varian hot/ice, buka modal dahulu
   if (checkVarian && m.is_hot_ice) {
     openModal(id);
     return;
@@ -304,6 +330,8 @@ function addToCart(id, checkVarian = false) {
   alert(`✓ "${m.nama}${vSuffix}" telah dimasukkan ke keranjang!`);
 }
 
+// 14. Fungsi updateCartBadge
+// Deskripsi: Memperbarui badge jumlah barang belanjaan di keranjang pada tombol melayang di pojok kanan bawah
 function updateCartBadge() {
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
   const total = cart.reduce((s, c) => s + c.qty, 0);
@@ -312,14 +340,16 @@ function updateCartBadge() {
   if (total > 0) { badge.classList.add('show'); } else { badge.classList.remove('show'); }
 }
 
-// Tutup modal jika klik overlay
 document.getElementById('detailModal').addEventListener('click', function (e) {
   if (e.target === this) closeModal();
 });
 
+// 15. Fungsi initPage
+// Deskripsi: Menginisialisasi pemuatan halaman dengan memanggil kategori, menu, dan status keranjang
 async function initPage() {
   await loadCategories();
   await loadMenu();
   updateCartBadge();
 }
+
 initPage();
