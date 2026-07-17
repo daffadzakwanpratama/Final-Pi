@@ -1,6 +1,6 @@
 lucide.createIcons();
 const token = localStorage.getItem('admin_token');
-if (!token) { alert('Akses ditolak.'); window.location.href = 'login.html'; }
+if (!token) { alert('Akses ditolak.'); window.location.href = '/admin/login.html'; }
 
 let allCategories = [];
 let modalMode = 'add';
@@ -119,7 +119,7 @@ async function hapusCat(id, nama) {
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
-  window.location.href = 'login.html';
+  window.location.href = '/admin/login.html';
 }
 
 document.getElementById('catModal').addEventListener('click', function(e) {

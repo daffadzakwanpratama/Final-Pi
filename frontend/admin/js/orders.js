@@ -1,6 +1,6 @@
 lucide.createIcons();
 const token = localStorage.getItem('admin_token');
-if (!token) { alert('Akses ditolak.'); window.location.href = 'login.html'; }
+if (!token) { alert('Akses ditolak.'); window.location.href = '/admin/login.html'; }
 
 let allOrders = [];
 let filterAktif = 'Semua';
@@ -204,7 +204,7 @@ async function markOrderPaid(orderId) {
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
-  window.location.href = 'login.html';
+  window.location.href = '/admin/login.html';
 }
 
 async function clearTodayOrders() {

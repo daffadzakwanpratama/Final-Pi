@@ -1,6 +1,6 @@
 lucide.createIcons();
 const token = localStorage.getItem('admin_token');
-if (!token) window.location.href = 'login.html';
+if (!token) window.location.href = '/admin/login.html';
 
 const username = localStorage.getItem('admin_username') || 'Admin';
 document.getElementById('greetingText').textContent = `Selamat datang, ${username}`;
@@ -51,7 +51,7 @@ async function loadDashboard() {
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
-  window.location.href = 'login.html';
+  window.location.href = '/admin/login.html';
 }
 
 async function clearTodayOrders() {

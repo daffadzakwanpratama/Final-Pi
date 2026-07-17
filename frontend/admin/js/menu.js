@@ -1,6 +1,6 @@
 lucide.createIcons();
 const token = localStorage.getItem('admin_token');
-if (!token) { alert('Akses ditolak.'); window.location.href = 'login.html'; }
+if (!token) { alert('Akses ditolak.'); window.location.href = '/admin/login.html'; }
 
 let allCategories = [];
 let allMenus = []; // defined implicitly in original loadMenus as global
@@ -225,7 +225,7 @@ async function hapusMenu(id, nama) {
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
-  window.location.href = 'login.html';
+  window.location.href = '/admin/login.html';
 }
 
 // Tutup modal klik di luar
