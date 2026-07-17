@@ -2,7 +2,7 @@ lucide.createIcons();
 
 // Redirect jika sudah login
 if (localStorage.getItem('admin_token')) {
-  window.location.href = 'dashboard.html';
+  window.location.href = '/admin/dashboard.html';
 }
 
 // Toggle visibilitas password
@@ -36,7 +36,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
     localStorage.setItem('admin_token',    data.token);
     localStorage.setItem('admin_username', data.user.username);
-    window.location.href = 'dashboard.html';
+    window.location.href = '/admin/dashboard.html';
   } catch (err) {
     alert(err.message);
     btn.disabled = false;
