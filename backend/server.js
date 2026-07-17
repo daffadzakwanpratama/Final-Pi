@@ -35,7 +35,7 @@ app.get('*', (req, res) => {
 // Menjalankan server Express
 app.listen(PORT, () => {
   console.log(`================================================`);
-  console.log(` Server Uncle Joe berjalan di port ${PORT}      `);
+  console.log(` Server Uncle Jo berjalan di port ${PORT}       `);
   console.log(` Halaman Pengguna: http://localhost:${PORT}      `);
   console.log(` Panel Admin     : http://localhost:${PORT}/admin/login.html`);
   console.log(`================================================`);

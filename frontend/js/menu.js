@@ -77,7 +77,7 @@ function getMenuTag(m) {
   if (m.is_favorit) return 'Favorit';
   const name = m.nama;
   const n = name.toLowerCase();
-  if (n.includes('uncle joe') || n.includes('signature')) return 'Signature';
+  if (n.includes('uncle jo') || n.includes('signature')) return 'Signature';
   if (n.includes('spesial') || n.includes('bestseller') || n.includes('nasi goreng')) return 'Bestseller';
   if (n.includes('clubhouse') || n.includes('sandwich') || n.includes('chef pick')) return 'Chef Pick';
   return null;

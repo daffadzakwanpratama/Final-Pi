@@ -1,6 +1,6 @@
-# Dokumentasi Proyek: Sistem QR Ordering (Uncle Joe)
+# Dokumentasi Proyek: Sistem QR Ordering (Uncle Jo)
 
-Dokumentasi ini disusun sebagai panduan teknis dan akademis untuk proyek **Sistem QR Ordering berbasis Web (Uncle Joe)**, yang dirancang khusus untuk memenuhi standar penulisan laporan penelitian **Penulisan Ilmiah (PI)**.
+Dokumentasi ini disusun sebagai panduan teknis dan akademis untuk proyek **Sistem QR Ordering berbasis Web (Uncle Jo)**, yang dirancang khusus untuk memenuhi standar penulisan laporan penelitian **Penulisan Ilmiah (PI)**.
 
 Sistem ini memfokuskan pada pemesanan menu makanan/minuman secara mandiri menggunakan teknologi QR Code/Input nomor meja guna meningkatkan efisiensi operasional kafe/warung kopi.
 
@@ -8,7 +8,7 @@ Sistem ini memfokuskan pada pemesanan menu makanan/minuman secara mandiri menggu
 
 ## 1. Identitas Sistem
 
-* **Nama Aplikasi**: Uncle Joe
+* **Nama Aplikasi**: Uncle Jo
 * **Tujuan**: Memangkas antrean di kasir dengan mendigitalisasi proses pemesanan dari meja pelanggan secara real-time.
 * **Arsitektur**: Client-Server berbasis REST API.
 * **Jumlah Aktor**: 2 Aktor (Pelanggan dan Admin).
