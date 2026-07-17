@@ -38,7 +38,6 @@ function renderCart() {
             ${item.nama}
             ${item.varian ? `<span style="font-size:0.75rem;color:var(--coffee-600);background:var(--coffee-100);padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px;">${item.varian}</span>` : ''}
           </div>
-          <div class="cart-item-harga">Rp ${item.harga.toLocaleString('id-ID')}</div>
           <button onclick="removeItem(${idx})" style="background:none;border:none;color:var(--status-waiting-text);font-size:0.75rem;font-weight:600;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px;font-family:inherit;">
             <i data-lucide="trash-2" style="width:12px;height:12px;"></i> Hapus
           </button>

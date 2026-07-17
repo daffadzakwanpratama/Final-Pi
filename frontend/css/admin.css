@@ -830,3 +830,9 @@ body.admin-login-body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.lucide-loader-circle,
+[data-lucide="loader-circle"],
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
