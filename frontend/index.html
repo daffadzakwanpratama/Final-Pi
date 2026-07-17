@@ -6,177 +6,8 @@
   <title>Uncle Joe — Scan & Pesan</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <style>
-    body {
-      background: var(--coffee-900);
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .landing-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-6) var(--space-5);
-    }
-
-    /* Logo & Hero */
-    .hero-logo {
-      width: 80px;
-      height: 80px;
-      border-radius: var(--radius-xl);
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: var(--space-5);
-      color: var(--coffee-200);
-    }
-
-    .hero-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: white;
-      text-align: center;
-      margin-bottom: var(--space-2);
-      letter-spacing: -0.5px;
-    }
-
-    .hero-title span { color: var(--coffee-300); }
-
-    .hero-subtitle {
-      text-align: center;
-      color: rgba(255,255,255,0.55);
-      font-size: 0.9rem;
-      margin-bottom: var(--space-8);
-      max-width: 280px;
-      line-height: 1.6;
-    }
-
-    /* Card Input Meja */
-    .scan-card {
-      background: white;
-      border-radius: var(--radius-xl);
-      padding: var(--space-6);
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-
-    .scan-card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: var(--space-1);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-
-    .scan-card-subtitle {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-bottom: var(--space-5);
-      padding-left: 28px;
-    }
-
-    /* QR Scan Simulation UI */
-    .qr-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-2) 0;
-    }
-
-    .qr-scanner-box {
-      width: 160px;
-      height: 160px;
-      border: 2px solid var(--border-strong);
-      border-radius: var(--radius-lg);
-      position: relative;
-      background: var(--coffee-50);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-bottom: var(--space-5);
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
-    }
-
-    /* Laser Line Animation */
-    .qr-laser-line {
-      position: absolute;
-      width: 90%;
-      height: 3px;
-      background: #16a34a; /* Green laser line */
-      box-shadow: 0 0 8px #16a34a, 0 0 15px #22c55e;
-      animation: laserMove 2.5s infinite ease-in-out;
-      border-radius: var(--radius-full);
-      z-index: 2;
-    }
-
-    @keyframes laserMove {
-      0% { top: 10px; }
-      50% { top: 145px; }
-      100% { top: 10px; }
-    }
-
-    /* Corner brackets for QR scanner look */
-    .qr-corner {
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      border-color: var(--coffee-700);
-      border-style: solid;
-      pointer-events: none;
-    }
-    .qr-top-left { top: 8px; left: 8px; border-width: 3px 0 0 3px; border-top-left-radius: 4px; }
-    .qr-top-right { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-top-right-radius: 4px; }
-    .qr-bottom-left { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; border-bottom-left-radius: 4px; }
-    .qr-bottom-right { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-bottom-right-radius: 4px; }
-
-    .qr-icon-placeholder {
-      opacity: 0.15;
-      color: var(--coffee-900);
-      animation: qrPulse 2.5s infinite ease-in-out;
-    }
-
-    @keyframes qrPulse {
-      0% { transform: scale(1); opacity: 0.15; }
-      50% { transform: scale(1.05); opacity: 0.25; }
-      100% { transform: scale(1); opacity: 0.15; }
-    }
-
-    .qr-instruction-box {
-      background: var(--coffee-50);
-      border: 1px dashed var(--border-strong);
-      border-radius: var(--radius-md);
-      padding: var(--space-4);
-      text-align: center;
-      width: 100%;
-    }
-
-    .qr-instruction-text {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
-
-    /* Footer */
-    .landing-footer {
-      text-align: center;
-      padding: var(--space-5);
-      color: rgba(255,255,255,0.3);
-      font-size: 0.75rem;
-    }
-  </style>
 </head>
-<body>
+<body class="landing-body">
   <div class="landing-wrapper">
     <!-- Logo Hero -->
     <div style="width:90px;height:90px;margin-bottom:var(--space-5);border-radius:50%;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.3);background:#000000;border:1px solid rgba(255,255,255,0.12);">
@@ -186,48 +17,43 @@
     <h1 class="hero-title">Uncle <span>Joe</span></h1>
     <p class="hero-subtitle">Pesan favoritmu langsung dari meja, tanpa antre di kasir.</p>
 
-    <!-- Card Scan QR -->
+    <!-- Card Pilih Meja -->
     <div class="scan-card">
-      <div class="scan-card-title">
-        <i data-lucide="qr-code" style="width:20px;height:20px;color:var(--coffee-500);"></i>
-        Pindai QR Code
+      <div class="scan-card-title" style="justify-content: center; font-size: 1.1rem; gap: 8px;">
+        <i data-lucide="armchair" style="width:22px;height:22px;color:var(--coffee-600);"></i>
+        Kamu duduk di meja berapa?
       </div>
-      <p class="scan-card-subtitle">Silakan scan QR Code pada meja Anda untuk memesan</p>
+      <p class="scan-card-subtitle">Silakan pilih nomor meja tempat Anda berada:</p>
 
-      <div class="qr-container">
-        <div class="qr-scanner-box">
-          <div class="qr-laser-line"></div>
-          <div class="qr-corner qr-top-left"></div>
-          <div class="qr-corner qr-top-right"></div>
-          <div class="qr-corner qr-bottom-left"></div>
-          <div class="qr-corner qr-bottom-right"></div>
-          <i data-lucide="qr-code" class="qr-icon-placeholder" style="width:90px;height:90px;"></i>
-        </div>
-
-        <div class="qr-instruction-box">
-          <p class="qr-instruction-text">
-            Membuka website secara otomatis dari QR Code meja akan mengaktifkan pemesanan untuk nomor meja Anda.
-          </p>
-        </div>
+      <div class="table-grid">
+        <button class="table-btn" onclick="selectMeja(1)">
+          <span class="table-num">1</span>
+          <span class="table-label">Meja 1</span>
+        </button>
+        <button class="table-btn" onclick="selectMeja(2)">
+          <span class="table-num">2</span>
+          <span class="table-label">Meja 2</span>
+        </button>
+        <button class="table-btn" onclick="selectMeja(3)">
+          <span class="table-num">3</span>
+          <span class="table-label">Meja 3</span>
+        </button>
+        <button class="table-btn" onclick="selectMeja(4)">
+          <span class="table-num">4</span>
+          <span class="table-label">Meja 4</span>
+        </button>
+        <button class="table-btn" onclick="selectMeja(5)">
+          <span class="table-num">5</span>
+          <span class="table-label">Meja 5</span>
+        </button>
+        <button class="table-btn" onclick="selectMeja(6)">
+          <span class="table-num">6</span>
+          <span class="table-label">Meja 6</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <div class="landing-footer">
-    QR Ordering System &copy; 2025 &mdash; Penulisan Ilmiah
-  </div>
-
-  <script>
-    // Inisialisasi ikon Lucide
-    lucide.createIcons();
-
-    // Deteksi parameter meja di URL (Simulasi Scan QR)
-    const urlParams = new URLSearchParams(window.location.search);
-    const paramMeja = urlParams.get('meja');
-    if (paramMeja && parseInt(paramMeja) > 0) {
-      localStorage.setItem('nomor_meja', paramMeja);
-      window.location.href = `menu.html?meja=${paramMeja}`;
-    }
-  </script>
+  <script src="js/index.js"></script>
 </body>
 </html>

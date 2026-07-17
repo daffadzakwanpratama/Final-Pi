@@ -8,62 +8,6 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-VIorNTLVjrfWltP_"></script>
-  <style>
-    body {
-      background: var(--surface-cream);
-    }
-
-    .page-content {
-      padding: var(--space-5);
-      padding-bottom: 100px;
-    }
-
-    .payment-card {
-      flex: 1;
-      border: 1.5px solid #e2e8f0;
-      background: var(--surface-white);
-      border-radius: 12px;
-      padding: var(--space-3);
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .payment-card.active {
-      border: 2px solid var(--coffee-700) !important;
-      background: var(--coffee-50) !important;
-    }
-    
-    .payment-card i {
-      color: #94a3b8;
-      width: 24px;
-      height: 24px;
-      margin: 0 auto 6px auto;
-      transition: all 0.2s ease;
-    }
-    .payment-card.active i {
-      color: var(--coffee-800) !important;
-    }
-    
-    .payment-card .payment-title {
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: #64748b;
-      transition: all 0.2s ease;
-    }
-    .payment-card.active .payment-title {
-      color: var(--coffee-900) !important;
-    }
-    
-    .payment-card .payment-desc {
-      font-size: 0.72rem;
-      color: #94a3b8;
-      margin-top: 2px;
-      transition: all 0.2s ease;
-    }
-    .payment-card.active .payment-desc {
-      color: var(--coffee-500) !important;
-    }
-  </style>
 </head>
 
 <body class="page-wrapper">
@@ -101,91 +45,71 @@
       </div>
     </div>
 
-    <!-- Informasi Meja -->
+    <!-- Rincian Pesanan -->
     <div class="card mt-4">
       <div class="card-header" style="display:flex;align-items:center;gap:8px;">
-        <i data-lucide="armchair" style="width:16px;height:16px;color:var(--coffee-500);"></i>
-        Informasi Meja
+        <i data-lucide="shopping-bag" style="width:16px;height:16px;color:var(--coffee-500);"></i>
+        Rincian Pesanan
       </div>
       <div class="card-body">
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Nomor Meja Anda</label>
-          <div style="position:relative; display:flex; align-items:center;">
-            <input type="text" id="nomorMejaInput" class="form-control"
-              style="background:var(--coffee-50); cursor:not-allowed; padding-left:40px; font-weight:600; color:var(--text-secondary);"
-              required readonly>
-            <i data-lucide="lock"
-              style="width:16px; height:16px; position:absolute; left:14px; color:var(--text-muted);"></i>
+        <div class="form-group" style="margin-bottom:var(--space-4);">
+          <label class="form-label">Nomor Meja</label>
+          <input type="text" id="nomorMejaInput" class="form-control" readonly style="background:var(--surface-cream);font-weight:600;color:var(--text-secondary);">
+        </div>
+
+        <div style="border-top:1px dashed var(--border);padding-top:var(--space-4);margin-top:var(--space-4);">
+          <div id="checkoutItemsList">
+            <!-- Rincian menu -->
           </div>
-          <div class="form-hint" style="color:var(--status-waiting-text); margin-top:6px;">
-            <i data-lucide="info" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
-            Nomor meja terdeteksi otomatis dari QR Code meja Anda dan tidak dapat diubah.
+          <div style="border-top:1.5px solid var(--border);padding-top:var(--space-3);margin-top:var(--space-3);display:flex;justify-content:space-between;font-weight:700;color:var(--text-primary);">
+            <span>Total Pembayaran</span>
+            <span id="checkoutTotalVal" style="color:var(--coffee-900);">Rp 0</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Ringkasan Pesanan -->
-    <div class="card mt-4">
-      <div class="card-header" style="display:flex;align-items:center;gap:8px;">
-        <i data-lucide="shopping-cart" style="width:16px;height:16px;color:var(--coffee-500);"></i>
-        Ringkasan Pesanan
-      </div>
-      <div class="card-body">
-        <div id="checkoutItemsList" style="margin-bottom:var(--space-4);">
-          <!-- Diisi via JS -->
-        </div>
-        <div class="summary-box" style="margin-bottom:0;">
-          <div class="summary-row summary-total" style="margin-bottom:0;">
-            <span>Total Tagihan</span>
-            <span id="checkoutTotalVal">Rp 0</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Metode Pembayaran -->
+    <!-- Pilih Metode Pembayaran -->
     <div class="card mt-4">
       <div class="card-header" style="display:flex;align-items:center;gap:8px;">
         <i data-lucide="wallet" style="width:16px;height:16px;color:var(--coffee-500);"></i>
         Metode Pembayaran
       </div>
       <div class="card-body">
-        <div style="display:flex; gap: var(--space-3); margin-bottom: var(--space-4);">
-          <!-- Opsi Tunai -->
-          <div id="payTunai" class="payment-card active" onclick="selectPaymentMethod('tunai')">
+        <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4);">
+          <div class="payment-card active" id="payTunai" onclick="selectPaymentMethod('tunai')">
             <i data-lucide="banknote"></i>
-            <div class="payment-title">Tunai di Kasir</div>
-            <div class="payment-desc">Bayar langsung ke kasir</div>
+            <div class="payment-title">Bayar Tunai</div>
+            <div class="payment-desc">Bayar langsung di kasir</div>
           </div>
-          <!-- Opsi Non-Tunai -->
-          <div id="payNontunai" class="payment-card" onclick="selectPaymentMethod('nontunai')">
-            <i data-lucide="qr-code"></i>
-            <div class="payment-title">Non-Tunai</div>
-            <div class="payment-desc">QRIS, Gopay, Transfer</div>
-          </div>
-        </div>
-
-        <!-- Info Keterangan Pembayaran -->
-        <div id="infoTunai" style="padding:var(--space-3); background: var(--status-process-bg); border: 1px solid var(--status-process-border); border-radius: 8px; display:flex; gap: 8px; align-items:flex-start;">
-          <i data-lucide="info" style="width:16px; height:16px; color:var(--status-process-text); flex-shrink:0; margin-top:2px;"></i>
-          <div style="font-size:0.78rem; color:var(--status-process-text); line-height:1.4;">
-            <strong>Bayar Tunai di Kasir:</strong> Pesanan Anda akan dikirim ke dapur dan segera diproses. Silakan lakukan pembayaran di kasir setelah Anda selesai makan atau saat pesanan siap.
+          <div class="payment-card" id="payNontunai" onclick="selectPaymentMethod('nontunai')">
+            <i data-lucide="credit-card"></i>
+            <div class="payment-title">Bayar Online</div>
+            <div class="payment-desc">Qris, Gpay, E-Wallet, Card</div>
           </div>
         </div>
 
-        <div id="infoNontunai" style="display:none; padding:var(--space-3); background: #fdf2e9; border: 1px solid #f5c299; border-radius: 8px; gap: 8px; align-items:flex-start;">
-          <i data-lucide="info" style="width:16px; height:16px; color: #b06222; flex-shrink:0; margin-top:2px;"></i>
-          <div style="font-size:0.78rem; color: #b06222; line-height:1.4;">
-            <strong>Bayar Online (Midtrans):</strong> Pop-up pembayaran instan (E-Wallet / QRIS / VA) akan otomatis terbuka setelah Anda menekan tombol "Pesan Sekarang".
-          </div>
+        <!-- Info Pembayaran Tunai -->
+        <div id="infoTunai" class="info-box-custom" style="display:flex;gap:12px;background:var(--coffee-50);border:1.5px solid var(--border-strong);padding:var(--space-4);border-radius:10px;">
+          <i data-lucide="info" style="width:20px;height:20px;color:var(--coffee-600);flex-shrink:0;"></i>
+          <p style="font-size:0.78rem;color:var(--text-secondary);line-height:1.5;margin:0;">
+            Setelah memesan, silakan langsung menuju kasir/tunggu di meja Anda untuk melakukan pembayaran secara tunai atau metode offline lainnya.
+          </p>
+        </div>
+
+        <!-- Info Pembayaran Online -->
+        <div id="infoNontunai" class="info-box-custom" style="display:none;gap:12px;background:#f0fdf4;border:1.5px solid #bbf7d0;padding:var(--space-4);border-radius:10px;">
+          <i data-lucide="shield-check" style="width:20px;height:20px;color:#16a34a;flex-shrink:0;"></i>
+          <p style="font-size:0.78rem;color:#15803d;line-height:1.5;margin:0;">
+            Pembayaran online diproses secara aman menggunakan gateway pembayaran Midtrans Snap. Pastikan koneksi internet Anda stabil.
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Tombol Pesan -->
+    <!-- Tombol Submit -->
     <div style="margin-top:var(--space-5);">
-      <button id="btnProsesPesanan" class="btn btn-primary btn-full btn-lg">
+      <button class="btn btn-primary btn-full btn-lg" id="btnProsesPesanan" style="gap:8px;">
         <i data-lucide="send" style="width:18px;height:18px;"></i>
         Pesan Sekarang
       </button>
@@ -193,148 +117,7 @@
 
   </main>
 
-  <script>
-    lucide.createIcons();
-    let cart = [];
-    let metodePembayaran = 'tunai';
-
-    function initCheckout() {
-      cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const noMeja = localStorage.getItem('nomor_meja') || '';
-
-      if (!noMeja) {
-        alert('Nomor meja tidak terdeteksi. Silakan pilih meja terlebih dahulu.');
-        window.location.href = 'index.html';
-        return;
-      }
-
-      document.getElementById('nomorMejaInput').value = noMeja;
-
-      if (cart.length === 0) {
-        alert('Keranjang kosong. Silakan pilih menu terlebih dahulu.');
-        window.location.href = 'menu.html';
-        return;
-      }
-      renderSummary();
-    }
-
-    function renderSummary() {
-      const list = document.getElementById('checkoutItemsList');
-      let total = 0;
-
-      list.innerHTML = cart.map(item => {
-        const sub = item.harga * item.qty;
-        total += sub;
-        const vText = item.varian ? ` (${item.varian})` : '';
-        return `
-          <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:var(--space-3);color:var(--text-secondary);">
-            <span>${item.nama}${vText} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
-            <span style="font-weight:600;">Rp ${sub.toLocaleString('id-ID')}</span>
-          </div>`;
-      }).join('');
-
-      document.getElementById('checkoutTotalVal').textContent = `Rp ${total.toLocaleString('id-ID')}`;
-    }
-
-    function selectPaymentMethod(method) {
-      metodePembayaran = method;
-      const payTunai = document.getElementById('payTunai');
-      const payNontunai = document.getElementById('payNontunai');
-      const infoTunai = document.getElementById('infoTunai');
-      const infoNontunai = document.getElementById('infoNontunai');
-
-      if (method === 'tunai') {
-        payTunai.classList.add('active');
-        payNontunai.classList.remove('active');
-        infoTunai.style.display = 'flex';
-        infoNontunai.style.display = 'none';
-      } else {
-        payNontunai.classList.add('active');
-        payTunai.classList.remove('active');
-        infoTunai.style.display = 'none';
-        infoNontunai.style.display = 'flex';
-      }
-    }
-
-    async function prosesCheckout() {
-      const meja = document.getElementById('nomorMejaInput').value.trim();
-      const nama = document.getElementById('namaPemesanInput').value.trim();
-      
-      if (!nama) { alert('Silakan masukkan nama pemesan.'); return; }
-      if (!meja) { alert('Nomor meja harus diisi.'); return; }
-
-      const payload = {
-        nomor_meja: meja,
-        nama_pelanggan: nama,
-        items: cart.map(c => ({ menu_id: c.id, qty: c.qty, varian: c.varian })),
-        metode_pembayaran: metodePembayaran
-      };
-
-      const btn = document.getElementById('btnProsesPesanan');
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader-circle" style="width:18px;height:18px;"></i> Memproses...';
-      lucide.createIcons();
-
-      try {
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.pesan || 'Gagal mengirim pesanan.');
-
-        localStorage.removeItem('cart');
-
-        if (metodePembayaran === 'nontunai' && data.snap_token) {
-          snap.pay(data.snap_token, {
-            onSuccess: function(result) {
-              fetch(`/api/orders/${data.order_id}/update-payment-client`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status_pembayaran: 'Sudah Bayar' })
-              }).then(() => {
-                window.location.href = `status.html?id=${data.order_id}`;
-              }).catch(() => {
-                window.location.href = `status.html?id=${data.order_id}`;
-              });
-            },
-            onPending: function(result) {
-              fetch(`/api/orders/${data.order_id}/update-payment-client`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status_pembayaran: 'Belum Bayar' })
-              }).then(() => {
-                window.location.href = `status.html?id=${data.order_id}`;
-              }).catch(() => {
-                window.location.href = `status.html?id=${data.order_id}`;
-              });
-            },
-            onError: function(result) {
-              alert('Pembayaran online gagal. Silakan bayar secara tunai ke kasir.');
-              window.location.href = `status.html?id=${data.order_id}`;
-            },
-            onClose: function() {
-              alert('Anda menutup popup pembayaran. Anda tetap dapat menyelesaikan pembayaran di halaman status pesanan.');
-              window.location.href = `status.html?id=${data.order_id}`;
-            }
-          });
-        } else {
-          // Jika tunai atau fallback ke cash
-          if (data.fallback_to_cash) { alert(data.pesan); }
-          window.location.href = `status.html?id=${data.order_id}`;
-        }
-      } catch (err) {
-        alert(err.message);
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px;"></i> Pesan Sekarang';
-        lucide.createIcons();
-      }
-    }
-
-    document.getElementById('btnProsesPesanan').addEventListener('click', prosesCheckout);
-    initCheckout();
-  </script>
+  <script src="js/checkout.js"></script>
 </body>
 
 </html>
