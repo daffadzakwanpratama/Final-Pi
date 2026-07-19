@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 // Membuat pool koneksi PostgreSQL
 // Mendukung DATABASE_URL (seperti Supabase/Heroku) dengan SSL, atau konfigurasi lokal biasa
