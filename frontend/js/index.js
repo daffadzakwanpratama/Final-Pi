@@ -1,23 +1,31 @@
-// =================================================================
-// Skrip Halaman Landing & Pemilihan Meja Pelanggan (index.js)
-// Deskripsi: Menginisialisasi ikon halaman, mendeteksi parameter meja 
-//            dari URL (simulasi scan QR code), dan mengarahkan ke menu.
-// =================================================================
+/**
+ * ==============================================================================
+ * SKRIP HALAMAN UTAMA / LANDING PAGE (frontend/js/index.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * File ini mengelola halaman pemungkas/landing tempat pelanggan memilih nomor meja:
+ * 1. Mendeteksi simulasi scan QR code dari URL parameter (`?meja=X`).
+ * 2. Menyimpan nomor meja terpilih ke LocalStorage (`nomor_meja`).
+ * 3. Mengarahkan pelanggan ke halaman katalog menu (`menu.html`).
+ * ==============================================================================
+ */
 
-// Inisialisasi ikon Lucide di halaman landing
 lucide.createIcons();
 
-// 1. Deteksi parameter meja di URL (Simulasi Scan QR)
-// Deskripsi: Jika pelanggan mengakses dengan parameter URL ?meja=X, simpan di localStorage dan arahkan ke menu.html
+// 1. Deteksi parameter meja dari URL (Simulasi Scan QR Code)
 const urlParams = new URLSearchParams(window.location.search);
 const paramMeja = urlParams.get('meja');
-if (paramMeja && parseInt(paramMeja) > 0) {
+
+if (paramMeja && parseInt(paramMeja, 10) > 0) {
   localStorage.setItem('nomor_meja', paramMeja);
   window.location.href = `menu.html?meja=${paramMeja}`;
 }
 
-// 2. Fungsi selectMeja
-// Deskripsi: Menyimpan nomor meja yang dipilih secara manual oleh pelanggan dan mengarahkan ke halaman menu
+/**
+ * 2. Menyimpan nomor meja terpilih secara manual
+ * @param {number|string} nomor 
+ */
 function selectMeja(nomor) {
   localStorage.setItem('nomor_meja', nomor);
   window.location.href = `menu.html?meja=${nomor}`;

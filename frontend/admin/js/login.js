@@ -1,20 +1,27 @@
-// =================================================================
-// Skrip Halaman Login Administrator (login.js)
-// Deskripsi: Mengelola autentikasi admin, penyimpanan token JWT, 
-//            dan proteksi halaman login jika sudah terautentikasi.
-// =================================================================
+/**
+ * ==============================================================================
+ * SKRIP AUTENTIKASI LOGIN ADMINISTRATOR (frontend/admin/js/login.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * File ini mengelola proses masuk (Login) akun Admin:
+ * 1. Proteksi halaman login (jika sudah punya token, alihkan ke dashboard).
+ * 2. Mengirimkan kredensial ke `POST /api/auth/login` via `API.post()`.
+ * 3. Menyimpan token JWT dan username di LocalStorage (`admin_token` & `admin_username`).
+ * 4. Mengalihkan ke `dashboard.html` setelah autentikasi sukses.
+ * ==============================================================================
+ */
 
-// Inisialisasi ikon Lucide di halaman login
 lucide.createIcons();
 
 // 1. Proteksi Halaman Login
-// Deskripsi: Jika token admin sudah ada di localStorage, langsung alihkan ke Dashboard
-if (localStorage.getItem('admin_token')) {
+if (API.getToken()) {
   window.location.href = '/admin/dashboard.html';
 }
 
-// 2. Fungsi togglePw
-// Deskripsi: Mengubah visibilitas kolom input password (tampilkan/sembunyikan karakter)
+/**
+ * 2. Mengubah visibilitas kolom input password (tampilkan/sembunyikan)
+ */
 let pwVisible = false;
 function togglePw() {
   pwVisible = !pwVisible;
@@ -23,40 +30,36 @@ function togglePw() {
   lucide.createIcons();
 }
 
-// 3. Penanganan Submit Login Form
-// Deskripsi: Mengirimkan kredensial admin ke API backend, menyimpan token, dan mengalihkan halaman
+/**
+ * 3. Penanganan Form Login Admin
+ */
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  // Nonaktifkan tombol login dan tampilkan animasi loading spinner
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  if (!username || !password) {
+    alert('Username dan password wajib diisi.');
+    return;
+  }
+
   const btn = document.getElementById('btnLogin');
   btn.disabled = true;
   btn.innerHTML = '<i data-lucide="loader-circle" style="width:18px;height:18px;animation: spin 1s linear infinite;"></i> Memverifikasi...';
   lucide.createIcons();
 
   try {
-    // Kirim request login ke backend API
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: document.getElementById('username').value.trim(),
-        password: document.getElementById('password').value.trim()
-      })
-    });
-    
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.pesan || 'Login gagal.');
+    const data = await API.post('/api/auth/login', { username, password });
 
     // Simpan token JWT dan nama admin ke localStorage
-    localStorage.setItem('admin_token',    data.token);
+    localStorage.setItem('admin_token', data.token);
     localStorage.setItem('admin_username', data.user.username);
     
-    // Alihkan ke halaman dashboard admin
+    // Redirect ke dashboard admin
     window.location.href = '/admin/dashboard.html';
   } catch (err) {
-    // Tampilkan pesan kesalahan dan aktifkan kembali tombol login
-    alert(err.message);
+    alert(err.message || 'Login gagal. Periksa username dan password Anda.');
     btn.disabled = false;
     btn.innerHTML = 'Masuk';
     lucide.createIcons();

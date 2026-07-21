@@ -1,138 +1,39 @@
-// Rute CRUD Menu (Pelanggan & Admin)
+/**
+ * ==============================================================================
+ * RUTE MANAJEMEN MENU (backend/routes/menu.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * File ini mendefinisikan endpoint HTTP untuk operasi CRUD menu/produk kafe.
+ * 
+ * ALUR KERJA (DATA FLOW):
+ * 1. GET /api/menu -> `menuController.getAllMenu` (Publik)
+ * 2. GET /api/menu/:id -> `menuController.getMenuById` (Publik)
+ * 3. POST /api/menu -> `verifikasiToken` -> `menuController.createMenu` (Admin)
+ * 4. PUT /api/menu/:id -> `verifikasiToken` -> `menuController.updateMenu` (Admin)
+ * 5. DELETE /api/menu/:id -> `verifikasiToken` -> `menuController.deleteMenu` (Admin)
+ * ==============================================================================
+ */
+
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const menuController = require('../controllers/menuController');
 const verifikasiToken = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
 
-// 1. GET /api/menu
-// Deskripsi: Mendapatkan seluruh daftar menu
-router.get('/', async (req, res) => {
-  try {
-    const resMenu = await db.query('SELECT * FROM menu ORDER BY kategori, nama');
-    res.json(resMenu.rows);
-  } catch (error) {
-    console.error('Error GET /api/menu:', error);
-    res.status(500).json({ pesan: 'Gagal mengambil daftar menu.' });
-  }
-});
+// 1. GET /api/menu - Mendapatkan seluruh daftar menu
+router.get('/', asyncHandler(menuController.getAllMenu));
 
-// 2. GET /api/menu/:id
-// Deskripsi: Mendapatkan detail satu menu berdasarkan ID
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const resMenu = await db.query('SELECT * FROM menu WHERE id = $1', [id]);
-    if (resMenu.rows.length === 0) {
-      return res.status(404).json({ pesan: 'Menu tidak ditemukan.' });
-    }
-    res.json(resMenu.rows[0]);
-  } catch (error) {
-    console.error('Error GET /api/menu/:id:', error);
-    res.status(500).json({ pesan: 'Gagal mengambil detail menu.' });
-  }
-});
+// 2. GET /api/menu/:id - Mendapatkan detail satu menu berdasarkan ID
+router.get('/:id', asyncHandler(menuController.getMenuById));
 
-// 3. POST /api/menu
-// Deskripsi: Menambahkan menu baru (Akses Admin)
-router.post('/', verifikasiToken, async (req, res) => {
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit } = req.body;
+// 3. POST /api/menu - Menambahkan menu baru (Admin)
+router.post('/', verifikasiToken, asyncHandler(menuController.createMenu));
 
-  if (!nama || !kategori || (!is_hot_ice && !harga)) {
-    return res.status(400).json({ pesan: 'Nama, kategori, dan harga wajib diisi.' });
-  }
-  if (is_hot_ice && (!harga_hot || !harga_ice)) {
-    return res.status(400).json({ pesan: 'Harga hot dan ice wajib diisi jika menu memiliki varian.' });
-  }
+// 4. PUT /api/menu/:id - Mengubah data menu berdasarkan ID (Admin)
+router.put('/:id', verifikasiToken, asyncHandler(menuController.updateMenu));
 
-  try {
-    const baseHarga = is_hot_ice ? Math.min(parseInt(harga_hot || 0), parseInt(harga_ice || 0)) : parseInt(harga);
-    const queryStr = 'INSERT INTO menu (nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *';
-    const values = [
-      nama, 
-      baseHarga, 
-      gambar || '', 
-      kategori, 
-      deskripsi || '', 
-      !!is_hot_ice, 
-      is_hot_ice ? parseInt(harga_hot || 0) : null,
-      is_hot_ice ? parseInt(harga_ice || 0) : null,
-      !!is_favorit
-    ];
-    
-    const resInsert = await db.query(queryStr, values);
-    res.status(201).json({
-      pesan: 'Menu baru berhasil ditambahkan.',
-      menu: resInsert.rows[0]
-    });
-  } catch (error) {
-    console.error('Error POST /api/menu:', error);
-    res.status(500).json({ pesan: 'Gagal menambahkan menu.' });
-  }
-});
-
-// 4. PUT /api/menu/:id
-// Deskripsi: Mengubah data menu berdasarkan ID (Akses Admin)
-router.put('/:id', verifikasiToken, async (req, res) => {
-  const { id } = req.params;
-  const { nama, harga, gambar, kategori, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit } = req.body;
-
-  if (!nama || !kategori || (!is_hot_ice && !harga)) {
-    return res.status(400).json({ pesan: 'Nama, kategori, dan harga wajib diisi.' });
-  }
-  if (is_hot_ice && (!harga_hot || !harga_ice)) {
-    return res.status(400).json({ pesan: 'Harga hot dan ice wajib diisi jika menu memiliki varian.' });
-  }
-
-  try {
-    // Memeriksa keberadaan menu
-    const checkMenu = await db.query('SELECT * FROM menu WHERE id = $1', [id]);
-    if (checkMenu.rows.length === 0) {
-      return res.status(404).json({ pesan: 'Menu tidak ditemukan.' });
-    }
-
-    const baseHarga = is_hot_ice ? Math.min(parseInt(harga_hot || 0), parseInt(harga_ice || 0)) : parseInt(harga);
-    const queryStr = 'UPDATE menu SET nama = $1, harga = $2, gambar = $3, kategori = $4, deskripsi = $5, is_hot_ice = $6, harga_hot = $7, harga_ice = $8, is_favorit = $9 WHERE id = $10 RETURNING *';
-    const values = [
-      nama, 
-      baseHarga, 
-      gambar || '', 
-      kategori, 
-      deskripsi || '', 
-      !!is_hot_ice, 
-      is_hot_ice ? parseInt(harga_hot || 0) : null,
-      is_hot_ice ? parseInt(harga_ice || 0) : null,
-      !!is_favorit,
-      id
-    ];
-
-    const resUpdate = await db.query(queryStr, values);
-    res.json({
-      pesan: 'Menu berhasil diperbarui.',
-      menu: resUpdate.rows[0]
-    });
-  } catch (error) {
-    console.error('Error PUT /api/menu/:id:', error);
-    res.status(500).json({ pesan: 'Gagal memperbarui menu.' });
-  }
-});
-
-// 5. DELETE /api/menu/:id
-// Deskripsi: Menghapus menu berdasarkan ID (Akses Admin)
-router.delete('/:id', verifikasiToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    // Memeriksa keberadaan menu
-    const checkMenu = await db.query('SELECT * FROM menu WHERE id = $1', [id]);
-    if (checkMenu.rows.length === 0) {
-      return res.status(404).json({ pesan: 'Menu tidak ditemukan.' });
-    }
-
-    await db.query('DELETE FROM menu WHERE id = $1', [id]);
-    res.json({ pesan: 'Menu berhasil dihapus.' });
-  } catch (error) {
-    console.error('Error DELETE /api/menu/:id:', error);
-    res.status(500).json({ pesan: 'Gagal menghapus menu.' });
-  }
-});
+// 5. DELETE /api/menu/:id - Menghapus menu berdasarkan ID (Admin)
+router.delete('/:id', verifikasiToken, asyncHandler(menuController.deleteMenu));
 
 module.exports = router;

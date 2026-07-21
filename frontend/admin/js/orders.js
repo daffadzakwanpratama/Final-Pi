@@ -1,27 +1,31 @@
-// =================================================================
-// Skrip Antrean Pesanan Administrator (orders.js)
-// Deskripsi: Mengelola antrean pesanan pelanggan, filter status,
-//            pembaruan status pesanan, validasi pembayaran, dan
-//            auto-refresh halaman secara real-time.
-// =================================================================
+/**
+ * ==============================================================================
+ * SKRIP ANTREAN PESANAN ADMINISTRATOR (frontend/admin/js/orders.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * File ini mengelola antrean pesanan di panel Kasir/Admin:
+ * 1. Proteksi sesi Admin via JWT Token.
+ * 2. Mengurutkan pesanan (FIFO untuk antrean aktif Menunggu->Diproses->Siap).
+ * 3. Memperbarui status pesanan secara linier (`API.patch('/api/orders/:id/status')`).
+ * 4. Menandai pesanan lunas tunai (`API.post('/api/orders/:id/mark-paid')`).
+ * 5. Auto-refresh antrean pesanan setiap 30 detik.
+ * ==============================================================================
+ */
 
-// Inisialisasi ikon Lucide di halaman manajemen pesanan
 lucide.createIcons();
 
-// 1. Validasi Sesi Admin (Proteksi Halaman)
-// Deskripsi: Memeriksa keberadaan token jwt admin, jika tidak ada alihkan ke login
-const token = localStorage.getItem('admin_token');
+// 1. Validasi Sesi Admin
+const token = API.getToken();
 if (!token) { 
   alert('Akses ditolak.'); 
   window.location.href = '/admin/login.html'; 
 }
 
-// Inisialisasi variabel global untuk pesanan dan filter status yang sedang aktif
 let allOrders = [];
 let filterAktif = 'Semua';
 
-// 2. Konfigurasi Visual & Alur untuk Tiap Status Pesanan
-// Deskripsi: Menentukan visual badge, tahapan alur pesanan berikutnya, label tombol, dan warna border card
+// Konfigurasi Visual Status Pesanan
 const statusConfig = {
   'Menunggu': {
     badgeClass:  'badge-menunggu',
@@ -57,8 +61,9 @@ const statusConfig = {
   },
 };
 
-// 3. Fungsi setFilter
-// Deskripsi: Menyaring antrean pesanan berdasarkan status (Semua, Menunggu, Diproses, Siap, Selesai)
+/**
+ * Mengubah filter status antrean di UI
+ */
 function setFilter(status, el) {
   filterAktif = status;
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -66,18 +71,19 @@ function setFilter(status, el) {
   renderOrders();
 }
 
-// 4. Fungsi loadOrders
-// Deskripsi: Mengambil seluruh pesanan dari API backend
+/**
+ * 2. Mengambil seluruh pesanan dari API backend
+ */
 async function loadOrders() {
   try {
-    const res = await fetch('/api/orders', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.status === 401) { logout(); return; }
-    allOrders = await res.json();
+    allOrders = await API.get('/api/orders');
     updateBadges();
     renderOrders();
-  } catch {
+  } catch (err) {
+    if (err.message.includes('401') || err.message.includes('403')) {
+      logout();
+      return;
+    }
     document.getElementById('ordersContainer').innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:var(--space-12);color:var(--text-muted);">
         <i data-lucide="wifi-off" style="width:32px;height:32px;margin:0 auto var(--space-3) auto;display:block;"></i>
@@ -87,8 +93,9 @@ async function loadOrders() {
   }
 }
 
-// 5. Fungsi updateBadges
-// Deskripsi: Memperbarui penunjuk jumlah pesanan aktif pada tab filter atas
+/**
+ * 3. Memperbarui badge penunjuk jumlah pesanan aktif pada tab filter
+ */
 function updateBadges() {
   ['Menunggu','Diproses','Siap'].forEach(s => {
     const count = allOrders.filter(o => o.status === s).length;
@@ -97,20 +104,21 @@ function updateBadges() {
   });
 }
 
-// 6. Fungsi renderOrders
-// Deskripsi: Menyusun tata letak kartu pesanan (Urutan FIFO untuk pesanan aktif, LIFO untuk pesanan Selesai)
+/**
+ * 4. Merender kartu antrean pesanan
+ */
 function renderOrders() {
   const container = document.getElementById('ordersContainer');
   let filtered  = filterAktif === 'Semua' ? allOrders : allOrders.filter(o => o.status === filterAktif);
 
-  // Mengurutkan pesanan: antrean aktif berada di atas secara FIFO, pesanan selesai berada di paling bawah (terbaru dulu)
+  // Mengurutkan: Antrean aktif FIFO, Pesanan selesai di paling bawah LIFO
   const urutan = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
   filtered = [...filtered].sort((a, b) => {
     const rankA = urutan.indexOf(a.status);
     const rankB = urutan.indexOf(b.status);
     if (rankA !== rankB) return rankA - rankB;
     if (a.status === 'Selesai') return new Date(b.tanggal) - new Date(a.tanggal);
-    return new Date(a.tanggal) - new Date(b.tanggal); // FIFO untuk antrean yang sedang berjalan
+    return new Date(a.tanggal) - new Date(b.tanggal);
   });
 
   if (!filtered.length) {
@@ -124,24 +132,22 @@ function renderOrders() {
     return;
   }
 
-  container.innerHTML = filtered.map((order, idx) => {
-    const cfg  = statusConfig[order.status] || statusConfig['Selesai'];
+  container.innerHTML = filtered.map(order => {
+    const cfg   = statusConfig[order.status] || statusConfig['Selesai'];
     const waktu = new Date(order.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const tgl   = new Date(order.tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'short' });
 
-    // Merender deretan detail item pesanan
+    // Merender detail item
     const itemsHtml = (order.items || []).map(item => {
       const vText = item.varian ? ` (${item.varian})` : '';
       return `<div class="order-item-row">
         <span>${item.nama}${vText} <strong style="color:var(--coffee-600)">×${item.qty}</strong></span>
-        <span style="font-weight:600;">Rp ${Number(item.subtotal).toLocaleString('id-ID')}</span>
+        <span style="font-weight:600;">${formatRupiah(item.subtotal)}</span>
       </div>`;
     }).join('');
 
-    // Menjumlahkan subtotal item untuk menampilkan total harga/tagihan
     const totalHarga = (order.items || []).reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
 
-    // Tombol perubahan status alur pesanan berikutnya
     const actionBtn = cfg.nextStatus ? `
       <button onclick="updateStatus(${order.id}, '${cfg.nextStatus}')" class="btn ${cfg.btnClass} btn-sm" style="width:auto;">
         <i data-lucide="${cfg.nextIcon}" style="width:14px;height:14px;"></i>
@@ -151,7 +157,6 @@ function renderOrders() {
     const paymentMethodText = order.metode_pembayaran === 'nontunai' ? '💳 Non-Tunai' : '💵 Tunai';
     const paymentStatusText = order.status_pembayaran || 'Belum Bayar';
     
-    // Penyesuaian class badge status pembayaran
     let paymentBadgeClass = 'badge-menunggu';
     if (order.status_pembayaran === 'Sudah Bayar') {
       paymentBadgeClass = 'badge-selesai';
@@ -159,7 +164,6 @@ function renderOrders() {
       paymentBadgeClass = 'badge-diproses'; 
     }
 
-    // Tombol lunas manual (hanya muncul untuk pembayaran tunai yang belum lunas)
     const markPaidBtn = (order.metode_pembayaran === 'tunai' && order.status_pembayaran === 'Belum Bayar') ? `
       <button onclick="markOrderPaid(${order.id})" class="btn btn-secondary btn-sm" style="width:auto;font-size:0.75rem;padding:4px 10px;margin-right:8px;background:#fdf2e9;color:#b06222;border-color:#f5c299;display:inline-flex;align-items:center;gap:4px;">
         <i data-lucide="check" style="width:12px;height:12px;"></i> Lunas
@@ -185,7 +189,7 @@ function renderOrders() {
         <div class="order-card-footer">
           <div>
             <div class="order-total-label">Total Tagihan</div>
-            <div class="order-total-value">Rp ${totalHarga.toLocaleString('id-ID')}</div>
+            <div class="order-total-value">${formatRupiah(totalHarga)}</div>
           </div>
           <div style="display:flex;align-items:center;">
             ${markPaidBtn}
@@ -201,67 +205,53 @@ function renderOrders() {
   lucide.createIcons();
 }
 
-// 7. Fungsi updateStatus
-// Deskripsi: Mengubah status antrean pesanan pelanggan ke tahapan alur berikutnya di database
+/**
+ * 5. Mengubah status antrean pesanan
+ */
 async function updateStatus(orderId, newStatus) {
   try {
-    const res = await fetch(`/api/orders/${orderId}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ status: newStatus })
-    });
-    if (!res.ok) throw new Error();
-    loadOrders(); // Muat ulang pesanan setelah berhasil diperbarui
-  } catch {
-    alert('Gagal mengubah status pesanan. Coba lagi.');
+    await API.patch(`/api/orders/${orderId}/status`, { status: newStatus });
+    loadOrders();
+  } catch (err) {
+    alert('Gagal mengubah status pesanan: ' + err.message);
   }
 }
 
-// 8. Fungsi markOrderPaid
-// Deskripsi: Mengubah status pembayaran pesanan menjadi lunas secara manual oleh kasir
+/**
+ * 6. Menandai pesanan lunas secara manual oleh kasir
+ */
 async function markOrderPaid(orderId) {
   if (!confirm('Tandai pesanan ini sebagai Lunas / Sudah Bayar?')) return;
   try {
-    const res = await fetch(`/api/orders/${orderId}/mark-paid`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error();
-    loadOrders(); // Muat ulang pesanan setelah pembayaran lunas dicatat
-  } catch {
-    alert('Gagal menandai lunas. Coba lagi.');
+    await API.post(`/api/orders/${orderId}/mark-paid`);
+    loadOrders();
+  } catch (err) {
+    alert('Gagal menandai lunas: ' + err.message);
   }
 }
 
-// 9. Fungsi logout
-// Deskripsi: Menghapus token admin dan beralih ke halaman login
+/**
+ * 7. Logout Admin
+ */
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   window.location.href = '/admin/login.html';
 }
 
-// 10. Fungsi clearTodayOrders
-// Deskripsi: Menghapus seluruh data transaksi pesanan di database dengan konfirmasi ganda
+/**
+ * 8. Menghapus seluruh data pesanan dengan konfirmasi ganda
+ */
 async function clearTodayOrders() {
-  if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) {
-    return;
-  }
+  if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) return;
   try {
-    const res = await fetch('/api/orders/today', {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    alert(data.pesan);
+    const res = await API.delete('/api/orders/today');
+    alert(res.pesan || 'Seluruh pesanan berhasil dibersihkan.');
     loadOrders();
   } catch (err) {
-    alert('Gagal menghapus pesanan hari ini.');
+    alert('Gagal menghapus pesanan hari ini: ' + err.message);
   }
 }
 
-// Memulai pemuatan awal data pesanan
 loadOrders();
-
-// Menyalakan fitur auto-refresh antrean pesanan setiap 30 detik
 setInterval(loadOrders, 30000);

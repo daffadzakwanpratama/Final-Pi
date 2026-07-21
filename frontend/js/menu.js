@@ -1,36 +1,46 @@
-// =================================================================
-// Skrip Halaman Menu Utama Pelanggan (menu.js)
-// Deskripsi: Mengelola data menu, kategori dinamis, filter menu, 
-//            detail modal menu dengan pemilihan varian (Hot/Ice), 
-//            serta proses penambahan menu ke keranjang belanja.
-// =================================================================
+/**
+ * ==============================================================================
+ * HALAMAN MENU UTAMA PELANGGAN (frontend/js/menu.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * Skrip ini mengatur seluruh interaktivitas daftar menu kafe untuk pelanggan:
+ * 1. Deteksi nomor meja dari parameter URL atau LocalStorage.
+ * 2. Mengambil kategori & produk dari backend API menggunakan `API.get()`.
+ * 3. Filter kategori dinamis & pencarian menu.
+ * 4. Modal detail produk dengan opsi varian (Hot / Ice).
+ * 5. Manajemen keranjang belanja lokal di LocalStorage.
+ * ==============================================================================
+ */
 
-// Variabel global untuk menyimpan data dari database dan state UI
+// State Aplikasi
 let listMenu = [];
 let listCategories = [];
 let kategoriAktif = 'Semua';
 
-// 1. Inisialisasi nomor meja pelanggan
-// Mengambil nomor meja dari URL parameter atau memulihkannya dari localStorage
+// 1. Inisialisasi Nomor Meja Pelanggan
 const urlParams = new URLSearchParams(window.location.search);
 let noMeja = urlParams.get('meja');
+
 if (noMeja) { 
   localStorage.setItem('nomor_meja', noMeja); 
 } else { 
   noMeja = localStorage.getItem('nomor_meja'); 
 }
 
-// Redirect ke halaman index.html jika nomor meja tidak terdeteksi
+// Redirect ke halaman awal jika pelanggan belum memilih nomor meja
 if (!noMeja) { 
   window.location.href = 'index.html'; 
 }
 
-// Tampilkan nomor meja pada elemen text
+// Tampilkan nomor meja pada header UI
 document.getElementById('mejaText').textContent = `Meja ${noMeja}`;
 lucide.createIcons();
 
-// 2. Fungsi getCategoryIcon
-// Deskripsi: Menentukan ikon Lucide yang relevan berdasarkan nama kategori secara dinamis
+/**
+ * Menentukan ikon Lucide yang cocok berdasarkan nama kategori
+ * @param {string} name 
+ */
 function getCategoryIcon(name) {
   const n = name.toLowerCase();
   if (n.includes('semua')) return 'sparkles';
@@ -40,21 +50,21 @@ function getCategoryIcon(name) {
   return 'tag';
 }
 
-// 3. Fungsi loadCategories
-// Deskripsi: Mengambil seluruh daftar kategori dari API backend
+/**
+ * 2. Mengambil daftar kategori dari API Backend
+ */
 async function loadCategories() {
   try {
-    const res = await fetch('/api/categories');
-    if (!res.ok) throw new Error();
-    listCategories = await res.json();
+    listCategories = await API.get('/api/categories');
     renderCategoryChips();
-  } catch {
-    console.error('Gagal memuat kategori.');
+  } catch (err) {
+    console.error('Gagal memuat kategori:', err.message);
   }
 }
 
-// 4. Fungsi renderCategoryChips
-// Deskripsi: Merender tombol filter kategori (Chips) secara dinamis ke halaman
+/**
+ * 3. Merender tombol filter kategori (Chips) secara dinamis
+ */
 function renderCategoryChips() {
   const container = document.getElementById('categoryScroll');
   let chipsHtml = `
@@ -77,13 +87,12 @@ function renderCategoryChips() {
   lucide.createIcons();
 }
 
-// 5. Fungsi loadMenu
-// Deskripsi: Mengambil daftar menu aktif dari backend API
+/**
+ * 4. Mengambil daftar produk menu dari API Backend
+ */
 async function loadMenu() {
   try {
-    const res = await fetch('/api/menu');
-    if (!res.ok) throw new Error('Gagal memuat menu');
-    listMenu = await res.json();
+    listMenu = await API.get('/api/menu');
     renderMenu();
   } catch (err) {
     document.getElementById('menuList').innerHTML = `
@@ -95,24 +104,26 @@ async function loadMenu() {
   }
 }
 
-// 6. Fungsi getMenuTag
-// Deskripsi: Menentukan label/tag promosi untuk menu secara dinamis berdasarkan nama atau status favorit
+/**
+ * Menentukan tag promosi menu (Favorit, Signature, Bestseller, dsb)
+ */
 function getMenuTag(m) {
   if (m.is_favorit) return 'Favorit';
-  const name = m.nama;
-  const n = name.toLowerCase();
+  const n = m.nama.toLowerCase();
   if (n.includes('uncle jo') || n.includes('signature')) return 'Signature';
   if (n.includes('spesial') || n.includes('bestseller') || n.includes('nasi goreng')) return 'Bestseller';
   if (n.includes('clubhouse') || n.includes('sandwich') || n.includes('chef pick')) return 'Chef Pick';
   return null;
 }
 
-// 7. Fungsi renderMenuCard
-// Deskripsi: Membuat markup HTML untuk satu buah kartu menu
+/**
+ * 5. Merender kartu menu individual
+ */
 function renderMenuCard(m) {
   const tag = getMenuTag(m);
   const tagHtml = tag ? `<span class="menu-card-tag">${tag}</span>` : '';
   const priceVal = m.is_hot_ice ? Math.min(m.harga_hot || 0, m.harga_ice || 0) : m.harga;
+  
   return `
     <div class="menu-card" onclick="openModal(${m.id})">
       <div class="menu-card-img-wrapper" style="position: relative; width: 100%; height: 120px; overflow: hidden; background-color: var(--surface-beige);">
@@ -127,7 +138,7 @@ function renderMenuCard(m) {
         <div class="menu-card-footer">
           <div class="menu-card-harga" style="font-size:0.75rem;">
             <span style="font-size: 0.95rem; font-weight: 700; color: var(--coffee-900);">
-              Rp ${priceVal.toLocaleString('id-ID')}
+              ${formatRupiah(priceVal)}
             </span>
           </div>
           <button class="menu-card-add-btn" onclick="event.stopPropagation(); addToCart(${m.id}, true)">
@@ -139,8 +150,9 @@ function renderMenuCard(m) {
   `;
 }
 
-// 8. Fungsi renderMenu
-// Deskripsi: Mengelompokkan menu berdasarkan kategori dan menampilkan daftar menu ke halaman
+/**
+ * 6. Merender daftar menu berdasarkan kelompok kategori
+ */
 function renderMenu() {
   const list = document.getElementById('menuList');
 
@@ -223,8 +235,9 @@ function renderMenu() {
   lucide.createIcons();
 }
 
-// 9. Fungsi filterKategori
-// Deskripsi: Mengubah filter kategori aktif berdasarkan chip yang diklik pengguna
+/**
+ * 7. Mengubah filter kategori aktif
+ */
 function filterKategori(kat, el) {
   kategoriAktif = kat;
   document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
@@ -232,11 +245,13 @@ function filterKategori(kat, el) {
   renderMenu();
 }
 
-// 10. Fungsi openModal
-// Deskripsi: Membuka pop-up modal detail menu, memuat informasi detail dan pengaturan varian (Hot/Ice)
+/**
+ * 8. Membuka modal detail menu
+ */
 function openModal(id) {
   const m = listMenu.find(x => x.id === id);
   if (!m) return;
+
   document.getElementById('modalImg').src = m.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
   document.getElementById('modalNama').textContent = m.nama;
   document.getElementById('modalKategori').textContent = m.kategori;
@@ -252,15 +267,16 @@ function openModal(id) {
     selectVariant('Ice', id);
   } else {
     vSec.style.display = 'none';
-    document.getElementById('modalHarga').textContent = `Rp ${m.harga.toLocaleString('id-ID')}`;
+    document.getElementById('modalHarga').textContent = formatRupiah(m.harga);
   }
 
   document.getElementById('btnAddToCart').onclick = () => addToCart(id, false);
   document.getElementById('detailModal').classList.add('show');
 }
 
-// 11. Fungsi selectVariant
-// Deskripsi: Mengatur visual dan memperbarui tampilan harga di modal ketika varian (Hot/Ice) diubah
+/**
+ * 9. Mengatur varian Hot/Ice pada modal
+ */
 function selectVariant(val, menuId) {
   document.querySelectorAll('.variant-opt').forEach(el => {
     el.style.borderColor = 'var(--border)';
@@ -276,18 +292,20 @@ function selectVariant(val, menuId) {
   const m = listMenu.find(x => x.id === menuId);
   if (m) {
     const hargaVarian = val === 'Hot' ? m.harga_hot : m.harga_ice;
-    document.getElementById('modalHarga').textContent = `Rp ${hargaVarian.toLocaleString('id-ID')}`;
+    document.getElementById('modalHarga').textContent = formatRupiah(hargaVarian);
   }
 }
 
-// 12. Fungsi closeModal
-// Deskripsi: Menutup pop-up modal detail menu
+/**
+ * 10. Menutup modal
+ */
 function closeModal() {
   document.getElementById('detailModal').classList.remove('show');
 }
 
-// 13. Fungsi addToCart
-// Deskripsi: Menambahkan item menu terpilih (beserta varian jika ada) ke dalam keranjang belanja LocalStorage
+/**
+ * 11. Menambahkan barang ke keranjang di LocalStorage
+ */
 function addToCart(id, checkVarian = false) {
   const m = listMenu.find(x => x.id === id);
   if (!m) return;
@@ -310,6 +328,7 @@ function addToCart(id, checkVarian = false) {
 
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
   const idx = cart.findIndex(c => c.id === id && c.varian === selectedVarian);
+  
   if (idx > -1) {
     cart[idx].qty++;
   } else {
@@ -322,6 +341,7 @@ function addToCart(id, checkVarian = false) {
       varian: selectedVarian
     });
   }
+
   localStorage.setItem('cart', JSON.stringify(cart));
   updateCartBadge();
   closeModal();
@@ -330,22 +350,29 @@ function addToCart(id, checkVarian = false) {
   alert(`✓ "${m.nama}${vSuffix}" telah dimasukkan ke keranjang!`);
 }
 
-// 14. Fungsi updateCartBadge
-// Deskripsi: Memperbarui badge jumlah barang belanjaan di keranjang pada tombol melayang di pojok kanan bawah
+/**
+ * 12. Mengupdate badge jumlah item di keranjang
+ */
 function updateCartBadge() {
   const cart = JSON.parse(localStorage.getItem('cart')) || [];
   const total = cart.reduce((s, c) => s + c.qty, 0);
   const badge = document.getElementById('cartCount');
   badge.textContent = total;
-  if (total > 0) { badge.classList.add('show'); } else { badge.classList.remove('show'); }
+  
+  if (total > 0) { 
+    badge.classList.add('show'); 
+  } else { 
+    badge.classList.remove('show'); 
+  }
 }
 
 document.getElementById('detailModal').addEventListener('click', function (e) {
   if (e.target === this) closeModal();
 });
 
-// 15. Fungsi initPage
-// Deskripsi: Menginisialisasi pemuatan halaman dengan memanggil kategori, menu, dan status keranjang
+/**
+ * 13. Fungsi Inisialisasi Halaman
+ */
 async function initPage() {
   await loadCategories();
   await loadMenu();

@@ -1,34 +1,39 @@
-// =================================================================
-// Skrip Kelola Menu Makanan & Minuman Administrator (menu.js)
-// Deskripsi: Mengelola data menu warung kopi (CRUD) oleh administrator,
-//            termasuk konversi gambar ke Base64, pengelolaan varian 
-//            Hot/Ice, dan toggle bintang Favorit.
-// =================================================================
+/**
+ * ==============================================================================
+ * SKRIP KELOLA MENU KAFE ADMINISTRATOR (frontend/admin/js/menu.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * Skrip ini mengatur seluruh antarmuka pengolahan produk kafe oleh Admin:
+ * 1. Proteksi akses admin via JWT.
+ * 2. Memuat kategori dinamis ke dropdown form.
+ * 3. Menampilkan tabel daftar produk, termasuk varian Hot/Ice, harga, dan indikator Favorit.
+ * 4. Pengunggahan foto produk (konversi ke string Base64).
+ * 5. Menangani operasi simpan (`API.post`/`API.put`) dan hapus (`API.delete`).
+ * ==============================================================================
+ */
 
-// Inisialisasi ikon Lucide di halaman manajemen menu
 lucide.createIcons();
 
-// 1. Validasi Sesi Admin (Proteksi Halaman)
-// Deskripsi: Memeriksa keberadaan token jwt admin, jika tidak ada alihkan ke login
-const token = localStorage.getItem('admin_token');
+// 1. Validasi Sesi Admin
+const token = API.getToken();
 if (!token) { 
   alert('Akses ditolak.'); 
   window.location.href = '/admin/login.html'; 
 }
 
-// Inisialisasi variabel global untuk kategori, menu, mode modal, dan string base64 gambar
 let allCategories = [];
 let allMenus = []; 
 let modalMode = 'add';
 let base64Gambar = '';
 
-// 2. Fungsi handleFileSelect
-// Deskripsi: Membaca file gambar yang diupload, membatasi ukurannya (max 1MB), dan mengonversinya ke Base64 Data URL
+/**
+ * 2. Membaca foto yang diunggah dan mengonversinya ke Base64 (Maks 1MB)
+ */
 function handleFileSelect(input) {
   const file = input.files[0];
   if (!file) return;
 
-  // Batasi ukuran file (maks 1 MB untuk keamanan performa database)
   if (file.size > 1024 * 1024) {
     alert('Ukuran foto terlalu besar. Maksimal ukuran file adalah 1 MB.');
     input.value = '';
@@ -43,36 +48,34 @@ function handleFileSelect(input) {
   reader.readAsDataURL(file);
 }
 
-// 3. Fungsi loadCategories
-// Deskripsi: Mengambil daftar kategori dinamis dari database untuk mengisi pilihan select option pada form menu
+/**
+ * 3. Memuat opsi kategori ke dropdown form
+ */
 async function loadCategories() {
   try {
-    const res = await fetch('/api/categories');
-    if (!res.ok) throw new Error();
-    allCategories = await res.json();
-    
+    allCategories = await API.get('/api/categories');
     const select = document.getElementById('kategoriMenu');
     select.innerHTML = allCategories.map(c => `<option value="${c.nama}">${c.nama}</option>`).join('');
-  } catch {
-    alert('Gagal mengambil daftar kategori.');
+  } catch (err) {
+    alert('Gagal mengambil daftar kategori: ' + err.message);
   }
 }
 
-// 4. Fungsi loadMenus
-// Deskripsi: Mengambil seluruh daftar menu dari backend API
+/**
+ * 4. Mengambil daftar menu dari API backend
+ */
 async function loadMenus() {
   try {
-    const res = await fetch('/api/menu');
-    if (!res.ok) throw new Error();
-    allMenus = await res.json();
+    allMenus = await API.get('/api/menu');
     renderMenuTable();
-  } catch {
-    alert('Gagal mengambil daftar menu.');
+  } catch (err) {
+    alert('Gagal mengambil daftar menu: ' + err.message);
   }
 }
 
-// 5. Fungsi toggleHargaVarian
-// Deskripsi: Menampilkan atau menyembunyikan input harga varian (Hot & Ice) berdasarkan checkbox varian terpilih
+/**
+ * 5. Mengatur tampilan input harga varian (Hot & Ice)
+ */
 function toggleHargaVarian() {
   const isChecked = document.getElementById('isHotIceMenu').checked;
   const container = document.getElementById('hargaVarianContainer');
@@ -93,8 +96,9 @@ function toggleHargaVarian() {
   }
 }
 
-// 6. Fungsi renderMenuTable
-// Deskripsi: Merender baris data menu beserta detail varian dan bintang favorit ke dalam tabel HTML
+/**
+ * 6. Merender tabel daftar menu
+ */
 function renderMenuTable() {
   const tbody = document.getElementById('menuTableBody');
   if (!allMenus.length) {
@@ -108,13 +112,14 @@ function renderMenuTable() {
 
   tbody.innerHTML = allMenus.map(menu => {
     const img = menu.gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200';
-    let hargaText = `Rp ${menu.harga.toLocaleString('id-ID')}`;
+    let hargaText = formatRupiah(menu.harga);
+    
     if (menu.is_hot_ice) {
-      const hHot = menu.harga_hot ? menu.harga_hot.toLocaleString('id-ID') : '-';
-      const hIce = menu.harga_ice ? menu.harga_ice.toLocaleString('id-ID') : '-';
+      const hHot = menu.harga_hot ? formatRupiah(menu.harga_hot) : '-';
+      const hIce = menu.harga_ice ? formatRupiah(menu.harga_ice) : '-';
       hargaText = `<div style="font-size:0.78rem;line-height:1.2;">
-        <div>Hot: Rp ${hHot}</div>
-        <div>Ice: Rp ${hIce}</div>
+        <div>Hot: ${hHot}</div>
+        <div>Ice: ${hIce}</div>
       </div>`;
     }
     return `
@@ -152,13 +157,14 @@ function renderMenuTable() {
   lucide.createIcons();
 }
 
-// 7. Fungsi openMenuModal
-// Deskripsi: Membuka pop-up modal input data menu dengan reset form awal
+/**
+ * 7. Membuka modal input data menu
+ */
 function openMenuModal(mode) {
   modalMode = mode;
   document.getElementById('menuForm').reset();
   document.getElementById('menuIdField').value = '';
-  base64Gambar = ''; // Reset penampung base64
+  base64Gambar = '';
   document.getElementById('imgPreview').src = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
   document.getElementById('modalTitle').textContent = mode === 'add' ? 'Tambah Menu Baru' : 'Edit Data Menu';
   document.getElementById('isFavoritMenu').checked = false;
@@ -167,17 +173,20 @@ function openMenuModal(mode) {
   lucide.createIcons();
 }
 
-// 8. Fungsi closeMenuModal
-// Deskripsi: Menutup pop-up modal input data menu
+/**
+ * 8. Menutup modal menu
+ */
 function closeMenuModal() {
   document.getElementById('menuModal').classList.remove('show');
 }
 
-// 9. Fungsi editMenuPrep
-// Deskripsi: Mengisi kolom formulir di modal berdasarkan menu terpilih yang akan diedit
+/**
+ * 9. Mempersiapkan modal edit data menu
+ */
 function editMenuPrep(id) {
   const menu = allMenus.find(m => m.id === id);
   if (!menu) return;
+
   openMenuModal('edit');
   document.getElementById('menuIdField').value = menu.id;
   document.getElementById('namaMenu').value    = menu.nama;
@@ -189,12 +198,13 @@ function editMenuPrep(id) {
   document.getElementById('hargaHotMenu').value = menu.harga_hot || '';
   document.getElementById('hargaIceMenu').value = menu.harga_ice || '';
   toggleHargaVarian();
-  base64Gambar = menu.gambar || ''; // Masukkan data gambar lama
+  base64Gambar = menu.gambar || '';
   document.getElementById('imgPreview').src = base64Gambar || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500';
 }
 
-// 10. Fungsi submitMenu
-// Deskripsi: Mengirimkan data input menu baru atau hasil edit ke API backend
+/**
+ * 10. Menyimpan menu baru/editan ke backend API
+ */
 async function submitMenu() {
   const id         = document.getElementById('menuIdField').value;
   const nama       = document.getElementById('namaMenu').value.trim();
@@ -205,16 +215,15 @@ async function submitMenu() {
   const is_favorit = document.getElementById('isFavoritMenu').checked;
   const harga_hot  = document.getElementById('hargaHotMenu').value;
   const harga_ice  = document.getElementById('hargaIceMenu').value;
-  const gambar     = base64Gambar; // Menggunakan string Base64 yang sudah dibaca
+  const gambar     = base64Gambar;
 
-  // Validasi pengisian nama dan harga
   if (!nama || (!is_hot_ice && !harga) || (is_hot_ice && (!harga_hot || !harga_ice))) { 
     alert('Mohon isi nama menu dan harga secara lengkap.'); 
     return; 
   }
 
-  const url    = modalMode === 'edit' ? `/api/menu/${id}` : '/api/menu';
-  const method = modalMode === 'edit' ? 'PUT' : 'POST';
+  const endpoint = modalMode === 'edit' ? `/api/menu/${id}` : '/api/menu';
+  const payload  = { nama, harga, kategori, gambar, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit };
 
   const btn = document.getElementById('btnSimpanMenu');
   btn.disabled = true;
@@ -222,13 +231,11 @@ async function submitMenu() {
   lucide.createIcons();
 
   try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ nama, harga, kategori, gambar, deskripsi, is_hot_ice, harga_hot, harga_ice, is_favorit })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.pesan || 'Gagal menyimpan.');
+    if (modalMode === 'edit') {
+      await API.put(endpoint, payload);
+    } else {
+      await API.post(endpoint, payload);
+    }
     closeMenuModal();
     loadMenus();
   } catch (err) {
@@ -240,42 +247,38 @@ async function submitMenu() {
   }
 }
 
-// 11. Fungsi hapusMenu
-// Deskripsi: Menghapus data menu dari API backend berdasarkan ID setelah konfirmasi
+/**
+ * 11. Menghapus menu dari API backend
+ */
 async function hapusMenu(id, nama) {
   if (!confirm(`Hapus menu "${nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
   try {
-    const res = await fetch(`/api/menu/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.pesan || 'Gagal menghapus.');
+    await API.delete(`/api/menu/${id}`);
     loadMenus();
   } catch (err) {
     alert(err.message);
   }
 }
 
-// 12. Fungsi logout
-// Deskripsi: Menghapus token admin dan beralih ke halaman login
+/**
+ * 12. Logout Admin
+ */
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   window.location.href = '/admin/login.html';
 }
 
-// Event listener agar modal menutup saat area luar modal diklik
 document.getElementById('menuModal').addEventListener('click', function(e) {
   if (e.target === this) closeMenuModal();
 });
 
-// 13. Fungsi initPage
-// Deskripsi: Menginisialisasi pemuatan halaman kelola menu dengan mengambil kategori & daftar menu
+/**
+ * 13. Inisialisasi Halaman
+ */
 async function initPage() {
   await loadCategories();
   await loadMenus();
 }
 
-// Jalankan fungsi inisialisasi halaman kelola menu
 initPage();

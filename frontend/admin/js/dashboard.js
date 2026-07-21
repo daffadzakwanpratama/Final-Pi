@@ -1,44 +1,44 @@
-// =================================================================
-// Skrip Halaman Dashboard Utama Administrator (dashboard.js)
-// Deskripsi: Proteksi sesi admin, memuat statistik pesanan/menu,
-//            menampilkan pesanan terbaru, serta mengelola logout.
-// =================================================================
+/**
+ * ==============================================================================
+ * SKRIP DASHBOARD ADMINISTRATOR (frontend/admin/js/dashboard.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * File ini mengelola tampilan utama (Dashboard) panel admin:
+ * 1. Proteksi sesi Admin (redirect ke `login.html` jika belum login).
+ * 2. Memuat ringkasan statistik (jumlah menu, pesanan hari ini, pesanan menunggu).
+ * 3. Menampilkan daftar pesanan terbaru secara real-time.
+ * 4. Menyediakan fitur Logout aman.
+ * ==============================================================================
+ */
 
-// Inisialisasi ikon Lucide di halaman dashboard
 lucide.createIcons();
 
-// 1. Validasi Sesi Admin (Proteksi Halaman)
-// Deskripsi: Jika token admin tidak ditemukan, alihkan segera ke halaman login
-const token = localStorage.getItem('admin_token');
+// 1. Proteksi Sesi Admin
+const token = API.getToken();
 if (!token) {
   window.location.href = '/admin/login.html';
 }
 
-// Menampilkan nama admin dan tanggal hari ini di header dashboard
+// Menampilkan ucapan selamat datang dan tanggal hari ini
 const username = localStorage.getItem('admin_username') || 'Admin';
 document.getElementById('greetingText').textContent = `Selamat datang, ${username}`;
 document.getElementById('dateText').textContent = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-// 2. Fungsi loadDashboard
-// Deskripsi: Mengambil statistik ringkasan dashboard dan daftar pesanan terbaru dari API
+/**
+ * 2. Memuat data ringkasan dashboard dari backend API
+ */
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/orders/dashboard-summary', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const data = await API.get('/api/orders/dashboard-summary');
     
-    // Jika token tidak valid / kedaluwarsa, lakukan logout otomatis
-    if (res.status === 401) { logout(); return; }
-    
-    const data = await res.json();
-    
-    // Memperbarui nilai statistik di UI dashboard
+    // Perbarui counter statistik UI
     document.getElementById('statMenu').textContent     = data.jumlah_menu ?? '—';
     document.getElementById('statHariIni').textContent  = data.pesanan_hari_ini ?? '—';
     document.getElementById('statMenunggu').textContent = data.pesanan_menunggu ?? '—';
     document.getElementById('statDiproses').textContent = data.pesanan_diproses ?? '—';
 
-    // Merender daftar pesanan terbaru ke dalam container
+    // Merender pesanan terbaru
     const container = document.getElementById('recentOrdersContainer');
     const orders = data.pesanan_terbaru || [];
 
@@ -61,37 +61,21 @@ async function loadDashboard() {
       </div>
     `).join('');
     lucide.createIcons();
+
   } catch (err) {
-    console.error("Gagal memuat dashboard:", err);
+    if (err.message.includes('401') || err.message.includes('403')) {
+      logout();
+    }
   }
 }
 
-// 3. Fungsi logout
-// Deskripsi: Menghapus token admin dan mengalihkan halaman ke login
+/**
+ * 3. Fungsi Logout Administrator
+ */
 function logout() {
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_username');
   window.location.href = '/admin/login.html';
 }
 
-// 4. Fungsi clearTodayOrders
-// Deskripsi: Menghapus seluruh data transaksi pesanan di database dengan konfirmasi ganda
-async function clearTodayOrders() {
-  if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data pesanan? Tindakan ini tidak dapat dibatalkan.')) {
-    return;
-  }
-  try {
-    const res = await fetch('/api/orders/today', {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
-    alert(data.pesan);
-    loadDashboard();
-  } catch (err) {
-    alert('Gagal menghapus pesanan hari ini.');
-  }
-}
-
-// Memulai pemuatan data dashboard saat halaman diakses
 loadDashboard();
