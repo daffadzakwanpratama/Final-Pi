@@ -42,7 +42,7 @@ module.exports = {
 
   // Konfigurasi Payment Gateway Midtrans
   midtrans: {
-    isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
+    isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'false',
     serverKey: (process.env.MIDTRANS_SERVER_KEY || '').trim(),
     clientKey: (process.env.MIDTRANS_CLIENT_KEY || '').trim()
   }
