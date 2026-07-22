@@ -1,4 +1,17 @@
-// Script untuk membersihkan data menu dan pesanan di database (Kecuali user Admin)
+/**
+ * ==============================================================================
+ * SKRIP PEMBERSIH DATA DATABASE (backend/clear.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * Skrip utilitas mandiri pengembang untuk membersihkan/mengosongkan data transaksi 
+ * dan menu di database (kecuali akun admin) untuk pengujian demo baru.
+ * 
+ * ALUR KERJA (DATA FLOW):
+ * Dijalankan manual lewat terminal: `node backend/clear.js`.
+ * Menghapus data dari tabel: `order_items` -> `orders` -> `menu` -> cek admin default.
+ * ==============================================================================
+ */
 const db = require('./db');
 
 async function bersihkanDatabase() {

@@ -4,15 +4,16 @@
  * ==============================================================================
  * 
  * TUJUAN & FUNGSI FILE:
- * Controller ini adalah pusat pengolahan transaksi pemesanan makanan/minuman,
- * integrasi pembayaran digital Midtrans Snap, serta manajemen status oleh Admin.
+ * File ini menangani seluruh siklus transaksi pemesanan dan dashboard admin:
+ * 1. createOrder: Membuat pesanan baru, menghitung subtotal, dan mendaftarkan Snap token Midtrans.
+ * 2. getOrderStatus: Mengambil status pesanan real-time untuk dilacak pelanggan.
+ * 3. getAllOrders: Mengambil daftar pesanan terurut FIFO untuk dapur/kasir admin.
+ * 4. updateOrderStatus / markPaid: Memperbarui status pesanan & menandai lunas transaksi tunai.
+ * 5. getDashboardSummary: Menghitung total omset, jumlah pesanan, dan menu terlaris.
  * 
- * ALUR KERJA PESANAN (TRANSACTION FLOW):
- * 1. Pelanggan memilih menu & melakukan Checkout -> `createOrder`.
- * 2. Sistem membuka Transaksi Database (`BEGIN`), menyimpan ke tabel `orders` & `order_items`.
- * 3. Jika metode pembayaran `nontunai`, sistem meminta Token Snap dari Midtrans API.
- * 4. Pelanggan memantau status secara real-time -> `getOrderStatus`.
- * 5. Admin mengelola status pesanan (Menunggu -> Diproses -> Siap -> Selesai) -> `updateOrderStatus`.
+ * ALUR KERJA (DATA FLOW):
+ * Masuk dari: Request HTTP yang diarahkan oleh `backend/routes/orders.js`
+ * Keluar ke: Mengirim data Snap token Midtrans, status pesanan real-time, atau statistik admin.
  * ==============================================================================
  */
 
@@ -20,35 +21,26 @@ const db = require('../db');
 const config = require('../config');
 const midtransClient = require('midtrans-client');
 
-// Inisialisasi Midtrans Snap Client dari Konfigurasi Terpusat
 const snapClient = new midtransClient.Snap({
   isProduction: config.midtrans.isProduction,
   serverKey: config.midtrans.serverKey,
   clientKey: config.midtrans.clientKey
 });
 
-/**
- * 1. Membuat pesanan baru (Checkout dari Pelanggan)
- * POST /api/orders
- */
+// POST /api/orders
 async function createOrder(req, res) {
   const { nomor_meja, items, metode_pembayaran, nama_pelanggan } = req.body;
 
-  // Validasi input dasar
   if (!nomor_meja || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ pesan: 'Nomor meja dan item pesanan tidak boleh kosong.' });
   }
 
   const paymentMethod = metode_pembayaran === 'nontunai' ? 'nontunai' : 'tunai';
-
-  // Ambil koneksi client dari pool untuk Transaksi SQL yang bersifat atomic
   const client = await db.pool.connect();
   
   try {
-    // Memulai Transaksi SQL (ACID Compliance)
     await client.query('BEGIN');
 
-    // a. Simpan data header ke tabel `orders`
     const insertOrderQuery = `
       INSERT INTO orders (nomor_meja, status, metode_pembayaran, status_pembayaran, nama_pelanggan) 
       VALUES ($1, 'Menunggu', $2, 'Belum Bayar', $3) 
@@ -64,7 +56,6 @@ async function createOrder(req, res) {
     let totalHarga = 0;
     const itemDetails = [];
 
-    // b. Simpan setiap rincian item ke tabel `order_items`
     for (const item of items) {
       const { menu_id, qty, varian } = item;
       
@@ -72,7 +63,6 @@ async function createOrder(req, res) {
         throw new Error('Data item pesanan tidak valid.');
       }
 
-      // Ambil data menu asli dari DB untuk menghitung subtotal secara akurat (keamanan harga)
       const menuRes = await client.query(
         'SELECT nama, harga, is_hot_ice, harga_hot, harga_ice FROM menu WHERE id = $1', 
         [menu_id]
@@ -84,7 +74,6 @@ async function createOrder(req, res) {
       const menu = menuRes.rows[0];
       let harga = Number(menu.harga);
 
-      // Hitung harga berdasarkan varian jika menu mendukung Hot/Ice
       if (menu.is_hot_ice) {
         if (varian === 'Hot' && menu.harga_hot !== null) {
           harga = Number(menu.harga_hot);
@@ -110,10 +99,8 @@ async function createOrder(req, res) {
       });
     }
 
-    // Melakukan Commit SQL jika seluruh item berhasil dimasukkan
     await client.query('COMMIT');
 
-    // c. Integrasi Midtrans jika metode pembayaran Non-Tunai
     if (paymentMethod === 'nontunai') {
       try {
         const midtransParams = {
@@ -131,7 +118,6 @@ async function createOrder(req, res) {
         const snapToken = transaction.token;
         const redirectUrl = transaction.redirect_url;
 
-        // Simpan token transaksi Midtrans ke database orders
         await db.query('UPDATE orders SET midtrans_token = $1 WHERE id = $2', [snapToken, orderId]);
 
         return res.status(201).json({
@@ -142,7 +128,6 @@ async function createOrder(req, res) {
         });
       } catch (midtransErr) {
         console.error('Error Midtrans Snap API:', midtransErr);
-        // Fallback jika API Midtrans offline/error: tetapkan pesanan dengan opsi tunai
         return res.status(201).json({
           pesan: 'Pesanan dibuat, tetapi gagal memproses pembayaran online. Silakan bayar secara tunai di kasir.',
           order_id: orderId,
@@ -151,26 +136,20 @@ async function createOrder(req, res) {
       }
     }
 
-    // Respon untuk pembayaran Tunai
     return res.status(201).json({
       pesan: 'Pesanan berhasil dibuat. Silakan bayar di kasir.',
       order_id: orderId
     });
 
   } catch (error) {
-    // Batalkan transaksi jika terjadi kesalahan di tengah alur
     await client.query('ROLLBACK');
     throw error;
   } finally {
-    // Lepaskan koneksi client kembali ke pool
     client.release();
   }
 }
 
-/**
- * 2. Mendapatkan status pesanan real-time berdasarkan ID
- * GET /api/orders/:id/status
- */
+// GET /api/orders/:id/status
 async function getOrderStatus(req, res) {
   const { id } = req.params;
 
@@ -195,10 +174,7 @@ async function getOrderStatus(req, res) {
   });
 }
 
-/**
- * 3. Mengambil ringkasan statistik untuk dashboard admin (Akses Admin)
- * GET /api/orders/dashboard-summary
- */
+// GET /api/orders/dashboard-summary
 async function getDashboardSummary(req, res) {
   const menuCount = await db.query('SELECT COUNT(*) FROM menu');
   const ordersToday = await db.query("SELECT COUNT(*) FROM orders WHERE DATE(tanggal) = CURRENT_DATE");
@@ -221,10 +197,7 @@ async function getDashboardSummary(req, res) {
   });
 }
 
-/**
- * 4. Mendapatkan semua pesanan terurut FIFO (terlama ke terbaru) (Akses Admin)
- * GET /api/orders
- */
+// GET /api/orders
 async function getAllOrders(req, res) {
   const ordersRes = await db.query('SELECT * FROM orders ORDER BY tanggal ASC');
   const orders = ordersRes.rows;
@@ -242,29 +215,23 @@ async function getAllOrders(req, res) {
   res.json(orders);
 }
 
-/**
- * 5. Mengubah status pesanan sesuai tahapan linier (Akses Admin)
- * PATCH /api/orders/:id/status
- */
+// PATCH /api/orders/:id/status
 async function updateOrderStatus(req, res) {
   const { id } = req.params;
   const { status } = req.body;
 
   const statusValid = ['Menunggu', 'Diproses', 'Siap', 'Selesai'];
-
   if (!status || !statusValid.includes(status)) {
     return res.status(400).json({ pesan: 'Status tidak valid.' });
-  }
-
-  const orderCheck = await db.query('SELECT id FROM orders WHERE id = $1', [id]);
-  if (orderCheck.rows.length === 0) {
-    return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
   }
 
   const updateRes = await db.query(
     'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
     [status, id]
   );
+  if (updateRes.rows.length === 0) {
+    return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
+  }
 
   res.json({
     pesan: 'Status pesanan berhasil diperbarui.',
@@ -272,18 +239,14 @@ async function updateOrderStatus(req, res) {
   });
 }
 
-/**
- * 6. Menangani notifikasi status pembayaran dari Midtrans Webhook
- * POST /api/orders/notification
- */
+// POST /api/orders/notification
 async function handleMidtransNotification(req, res) {
   const statusResponse = req.body;
   
   const transactionStatus = statusResponse.transaction_status;
   const fraudStatus = statusResponse.fraud_status;
   
-  // Format order_id di Midtrans: ORDER-{id}-{timestamp}
-  const parts = statusResponse.order_id.split('-');
+  const parts = (statusResponse.order_id || '').split('-');
   const dbOrderId = parseInt(parts[1], 10);
   
   if (isNaN(dbOrderId)) {
@@ -291,7 +254,6 @@ async function handleMidtransNotification(req, res) {
   }
   
   let paymentStatus = 'Belum Bayar';
-  
   if (transactionStatus === 'capture') {
     paymentStatus = (fraudStatus === 'challenge') ? 'Belum Bayar' : 'Sudah Bayar';
   } else if (transactionStatus === 'settlement') {
@@ -301,50 +263,42 @@ async function handleMidtransNotification(req, res) {
   }
   
   await db.query('UPDATE orders SET status_pembayaran = $1 WHERE id = $2', [paymentStatus, dbOrderId]);
-  
   res.status(200).send('OK');
 }
 
-/**
- * 7. Menandai pesanan telah lunas secara manual (Akses Admin)
- * POST /api/orders/:id/mark-paid
- */
+// POST /api/orders/:id/mark-paid
 async function markOrderAsPaid(req, res) {
   const { id } = req.params;
 
-  const orderCheck = await db.query('SELECT id FROM orders WHERE id = $1', [id]);
-  if (orderCheck.rows.length === 0) {
+  const updateRes = await db.query(
+    "UPDATE orders SET status_pembayaran = 'Sudah Bayar' WHERE id = $1 RETURNING id",
+    [id]
+  );
+  if (updateRes.rows.length === 0) {
     return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
   }
-  
-  await db.query("UPDATE orders SET status_pembayaran = 'Sudah Bayar' WHERE id = $1", [id]);
   
   res.json({ pesan: 'Pesanan berhasil ditandai sebagai Lunas.' });
 }
 
-/**
- * 8. Memperbarui status pembayaran dari client-side callback
- * POST /api/orders/:id/update-payment-client
- */
+// POST /api/orders/:id/update-payment-client
 async function updatePaymentFromClient(req, res) {
   const { id } = req.params;
   const { status_pembayaran } = req.body;
+  const paymentStatus = status_pembayaran || 'Sudah Bayar';
 
-  const orderCheck = await db.query('SELECT id FROM orders WHERE id = $1', [id]);
-  if (orderCheck.rows.length === 0) {
+  const updateRes = await db.query(
+    "UPDATE orders SET status_pembayaran = $1 WHERE id = $2 RETURNING id",
+    [paymentStatus, id]
+  );
+  if (updateRes.rows.length === 0) {
     return res.status(404).json({ pesan: 'Pesanan tidak ditemukan.' });
   }
-  
-  const paymentStatus = status_pembayaran || 'Sudah Bayar';
-  await db.query("UPDATE orders SET status_pembayaran = $1 WHERE id = $2", [paymentStatus, id]);
   
   res.json({ pesan: 'Status pembayaran berhasil diperbarui dari client.', status_pembayaran: paymentStatus });
 }
 
-/**
- * 9. Menghapus semua pesanan (Akses Admin)
- * DELETE /api/orders/today
- */
+// DELETE /api/orders/today
 async function deleteAllOrders(req, res) {
   const result = await db.query("DELETE FROM orders");
   res.json({ pesan: `Berhasil menghapus seluruh pesanan (${result.rowCount} pesanan telah dibersihkan).` });

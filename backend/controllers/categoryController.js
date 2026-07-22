@@ -1,51 +1,42 @@
 /**
  * ==============================================================================
- * CONTROLLER KATEGORI MENU (backend/controllers/categoryController.js)
+ * CONTROLLER MANAJEMEN KATEGORI MENU (backend/controllers/categoryController.js)
  * ==============================================================================
  * 
  * TUJUAN & FUNGSI FILE:
- * Controller ini mengelola logika CRUD (Create, Read, Update, Delete) untuk 
- * kategori produk (misalnya: Makanan, Minuman, Snack).
+ * File ini bertindak sebagai pelaksana operasi CRUD untuk kategori produk:
+ * 1. getAllCategories: Mengambil semua data kategori dari database PostgreSQL.
+ * 2. createCategory: Menambahkan kategori baru (memeriksa duplikasi nama).
+ * 3. updateCategory: Mengubah nama kategori berdasarkan ID.
+ * 4. deleteCategory: Menghapus kategori tertentu berdasarkan ID.
  * 
  * ALUR KERJA (DATA FLOW):
- * 1. Menerima request HTTP dari frontend (Admin / Pelanggan).
- * 2. Melakukan validasi data input.
- * 3. Menjalankan query SQL ke tabel `categories`.
- * 4. Mengembalikan respon berformat JSON yang sesuai.
+ * Masuk dari: Request HTTP yang diarahkan oleh `backend/routes/categories.js`
+ * Keluar ke: Respon JSON hasil query PostgreSQL ke client (frontend admin/klien).
  * ==============================================================================
  */
 
 const db = require('../db');
 
-/**
- * 1. Mendapatkan seluruh daftar kategori
- * GET /api/categories
- */
+// GET /api/categories
 async function getAllCategories(req, res) {
   const resCat = await db.query('SELECT * FROM categories ORDER BY nama');
   res.json(resCat.rows);
 }
 
-/**
- * 2. Menambahkan kategori baru (Akses Admin)
- * POST /api/categories
- */
+// POST /api/categories
 async function createCategory(req, res) {
   const { nama } = req.body;
-
-  if (!nama || nama.trim() === '') {
+  if (!nama || !nama.trim()) {
     return res.status(400).json({ pesan: 'Nama kategori tidak boleh kosong.' });
   }
 
   const categoryName = nama.trim();
-
-  // Cek duplikasi nama kategori
   const checkCat = await db.query('SELECT id FROM categories WHERE nama = $1', [categoryName]);
   if (checkCat.rows.length > 0) {
     return res.status(400).json({ pesan: 'Nama kategori sudah terdaftar.' });
   }
 
-  // Insert ke database
   const resInsert = await db.query(
     'INSERT INTO categories (nama) VALUES ($1) RETURNING *',
     [categoryName]
@@ -57,25 +48,16 @@ async function createCategory(req, res) {
   });
 }
 
-/**
- * 3. Mengubah nama kategori berdasarkan ID (Akses Admin)
- * PUT /api/categories/:id
- */
+// PUT /api/categories/:id
 async function updateCategory(req, res) {
   const { id } = req.params;
   const { nama } = req.body;
 
-  if (!nama || nama.trim() === '') {
+  if (!nama || !nama.trim()) {
     return res.status(400).json({ pesan: 'Nama kategori tidak boleh kosong.' });
   }
 
   const categoryName = nama.trim();
-
-  // Memeriksa keberadaan kategori
-  const checkCat = await db.query('SELECT id FROM categories WHERE id = $1', [id]);
-  if (checkCat.rows.length === 0) {
-    return res.status(404).json({ pesan: 'Kategori tidak ditemukan.' });
-  }
 
   // Memeriksa apakah nama baru sudah dipakai oleh kategori lain
   const checkDuplicate = await db.query(
@@ -86,11 +68,14 @@ async function updateCategory(req, res) {
     return res.status(400).json({ pesan: 'Nama kategori sudah digunakan.' });
   }
 
-  // Update nama kategori
   const resUpdate = await db.query(
     'UPDATE categories SET nama = $1 WHERE id = $2 RETURNING *',
     [categoryName, id]
   );
+
+  if (resUpdate.rows.length === 0) {
+    return res.status(404).json({ pesan: 'Kategori tidak ditemukan.' });
+  }
 
   res.json({
     pesan: 'Kategori berhasil diperbarui.',
@@ -98,21 +83,14 @@ async function updateCategory(req, res) {
   });
 }
 
-/**
- * 4. Menghapus kategori berdasarkan ID (Akses Admin)
- * DELETE /api/categories/:id
- */
+// DELETE /api/categories/:id
 async function deleteCategory(req, res) {
   const { id } = req.params;
-
-  // Memeriksa keberadaan kategori
-  const checkCat = await db.query('SELECT id FROM categories WHERE id = $1', [id]);
-  if (checkCat.rows.length === 0) {
+  const resDelete = await db.query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
+  if (resDelete.rows.length === 0) {
     return res.status(404).json({ pesan: 'Kategori tidak ditemukan.' });
   }
 
-  // Hapus dari database
-  await db.query('DELETE FROM categories WHERE id = $1', [id]);
   res.json({ pesan: 'Kategori berhasil dihapus.' });
 }
 

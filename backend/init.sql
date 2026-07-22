@@ -1,4 +1,17 @@
--- Inisialisasi Database QR Ordering
+-- ==============================================================================
+-- SKEMA INISIALISASI DATABASE POSTGRESQL (backend/init.sql)
+-- ==============================================================================
+-- 
+-- TUJUAN & FUNGSI FILE:
+-- Membuat seluruh struktur tabel yang diperlukan aplikasi serta data benih (seed) default.
+-- 
+-- STRUKTUR TABEL:
+-- 1. users (Kredensial Admin)
+-- 2. categories (Daftar Kategori Produk)
+-- 3. menu (Katalog Makanan & Minuman)
+-- 4. orders (Informasi Transaksi & Meja)
+-- 5. order_items (Detail Kuantitas Produk Terpesan)
+-- ==============================================================================
 
 -- 1. Tabel Users
 CREATE TABLE IF NOT EXISTS users (

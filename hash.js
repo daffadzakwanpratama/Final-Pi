@@ -1,4 +1,17 @@
-// Script utilitas untuk membuat hash password Bcrypt
+/**
+ * ==============================================================================
+ * SKRIP UTILITAS HASH BCRYPT PASSWORD (hash.js)
+ * ==============================================================================
+ * 
+ * TUJUAN & FUNGSI FILE:
+ * Membuat hash satu arah terenkripsi menggunakan Bcrypt dari argumen password 
+ * yang dimasukkan pada terminal.
+ * 
+ * ALUR KERJA (DATA FLOW):
+ * Input: `node hash.js passwordku123`
+ * Output: Menghasilkan string hash Bcrypt siap pakai untuk disisipkan ke database.
+ * ==============================================================================
+ */
 const bcrypt = require('bcryptjs');
 
 // Mengambil argumen password dari command line, jika kosong gunakan default 'kopi123'

@@ -1,16 +1,18 @@
 /**
  * ==============================================================================
- * HTTP CLIENT & UTILS HELPER FRONTEND (frontend/js/api.js)
+ * CLIENT API UTILS FRONTEND (frontend/js/api.js)
  * ==============================================================================
  * 
  * TUJUAN & FUNGSI FILE:
- * File ini bertindak sebagai API Client Helper terpusat untuk komunikasi antara 
- * Frontend (HTML/JS) dan Backend REST API Node.js/Express.
+ * File pembantu terpusat untuk komunikasi HTTP Fetch dari frontend ke backend:
+ * 1. Mengelola JWT Token di LocalStorage secara otomatis (`getToken`, `setToken`, `removeToken`).
+ * 2. Menyediakan fungsi pembungkus (request wrapper) untuk GET, POST, PUT, PATCH, DELETE.
+ * 3. Menyisipkan Authorization Header secara otomatis jika sesi login admin terdeteksi.
+ * 4. Memformat angka nominal menjadi mata uang Rupiah (`formatRupiah`).
  * 
- * MENGAPA PENTING (Prinsip Clean Code - DRY & Centralized API Client):
- * 1. Menghilangkan penulisan `fetch()`, penanganan header auth JWT, dan `res.json()` berulang.
- * 2. Menyediakan helper umum seperti pembulatan harga Rupiah (`formatRupiah`).
- * 3. Menyediakan manajemen token autentikasi Admin secara aman di `localStorage`.
+ * ALUR KERJA (DATA FLOW):
+ * Masuk dari: Dipanggil oleh modul JS frontend lainnya (seperti `menu.js`, `orders.js`, `login.js`).
+ * Keluar ke: Melakukan panggilan jaringan (network requests) ke server REST API backend.
  * ==============================================================================
  */
 
