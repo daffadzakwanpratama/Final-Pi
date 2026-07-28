@@ -64,3 +64,11 @@ CREATE TABLE IF NOT EXISTS order_items (
     subtotal INT NOT NULL,
     varian VARCHAR(20) -- 'Hot', 'Ice', atau NULL
 );
+
+-- 6. Aktifkan Row Level Security (RLS) untuk mencegah akses publik via Supabase REST API
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE menu ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
